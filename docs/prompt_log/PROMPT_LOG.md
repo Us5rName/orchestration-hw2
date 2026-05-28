@@ -65,9 +65,32 @@
 
 ---
 
+### Prompt 6: Phase 2 Shared Infrastructure
+**User**: "go on. remember to read the skills curefully (They are requirements) and make short readable commits"
+
+**Context**: Build Phase 2 — ConfigManager, LogManager, ApiGatekeeper, Watchdog.
+
+**Skills Applied**: tdd-testing, api-gatekeeper, modular-design, code-review-config, project-setup, version-control
+
+**Output**:
+- ConfigManager: JSON config loader with version access (9 tests)
+- LogManager: FIFO line-based rotation (5 tests)
+- ApiGatekeeper: rate limiting, retries, queue status (7 tests)
+- Watchdog: keep-alive ping, on-death callback (4 tests)
+- 25 total tests, 0 Ruff violations
+- New branch: feature/shared-infrastructure
+
+**Lessons**:
+- Skill says "meaningful messages" — nothing about conventional commit format
+- Small commits = one logical unit per commit
+- Create matching branches per phase
+
+---
+
 ## Best Practices Established
 
-1. **Plan before code** — PRD → PLAN → TODO → approval → implement
-2. **Feature branches** — never commit directly to master
-3. **Meaningful commits** — describe what changed and why
-4. **Prompt log** — document AI-assisted decisions for traceability
+1. Plan before code — PRD → PLAN → TODO → approval → implement
+2. Feature branches — one per phase
+3. Meaningful commits — what changed and why
+4. Prompt log — document AI-assisted decisions
+5. TDD cycle — RED (test) → GREEN (impl) → REFACTOR (ruff) → commit

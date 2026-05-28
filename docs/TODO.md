@@ -12,11 +12,11 @@
 - [x] Create config/logging_config.json
 
 ## Phase 2: Shared Infrastructure
-- [ ] ConfigManager — load and validate config
-- [ ] LogManager — structured logging with FIFO rotation
-- [ ] ApiGatekeeper — rate limiting, queuing, retries
-- [ ] Watchdog — process monitoring and keep-alive
-- [ ] Constants — immutable project constants
+- [x] ConfigManager — load and validate config
+- [x] LogManager — structured logging with FIFO rotation
+- [x] ApiGatekeeper — rate limiting, queuing, retries
+- [x] Watchdog — process monitoring and keep-alive
+- [x] Constants — immutable project constants
 
 ## Phase 3: LLM Providers
 - [ ] ILLMProvider — abstract base interface
