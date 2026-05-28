@@ -4,12 +4,12 @@
 - [x] Create PRD.md
 - [x] Create PLAN.md
 - [x] Create TODO.md
-- [ ] Create pyproject.toml with dependencies
-- [ ] Create .env-example
-- [ ] Create .gitignore
-- [ ] Create config/setup.json
-- [ ] Create config/rate_limits.json
-- [ ] Create config/logging_config.json
+- [x] Create pyproject.toml with dependencies
+- [x] Create .env-example
+- [x] Create .gitignore
+- [x] Create config/setup.json
+- [x] Create config/rate_limits.json
+- [x] Create config/logging_config.json
 
 ## Phase 2: Shared Infrastructure
 - [ ] ConfigManager — load and validate config

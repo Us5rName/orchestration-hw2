@@ -44,6 +44,27 @@
 
 ---
 
+---
+
+### Prompt 5: Phase 1 Foundation
+**User**: "go ahead. Remember to use the skills on demand when relevant. The instructions of the skills are requirements, not recommendations"
+
+**Context**: Build Phase 1 — project structure, config files, dependencies.
+
+**Skills Applied**: version-control, code-review-config, package-organization, project-setup
+
+**Output**:
+- pyproject.toml with Ruff, pytest, coverage config
+- .env-example with API key placeholders
+- 3 config files (setup.json, rate_limits.json, logging_config.json) — all v1.00
+- Full src/debate/ package structure with __init__.py files
+- uv.lock with 47 locked packages
+- Ruff: 0 violations
+
+**Best Practice**: Always run `uv lock`, `uv sync`, and `ruff check` before committing.
+
+---
+
 ## Best Practices Established
 
 1. **Plan before code** — PRD → PLAN → TODO → approval → implement
