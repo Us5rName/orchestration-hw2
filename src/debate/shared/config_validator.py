@@ -1,0 +1,69 @@
+"""Config version validation at startup."""
+
+import json
+import sys
+from pathlib import Path
+
+from .version import REQUIRED_CONFIG_VERSION
+
+
+def _load_json(path: str) -> dict:
+    """Load a JSON file and return its contents."""
+    file_path = Path(path)
+    if not file_path.exists():
+        print(f"ERROR: Config file not found: {path}")
+        sys.exit(1)
+    with open(file_path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def validate_config_version(path: str, version_key: str = "version") -> None:
+    """Validate that a config file's version matches the required version.
+
+    Args:
+        path: Path to the JSON config file.
+        version_key: The key that holds the version string.
+            For rate_limits.json the version is nested under "rate_limits".
+
+    Raises:
+        SystemExit: If versions don't match or file is missing.
+    """
+    data = _load_json(path)
+    file_version = data.get(version_key)
+
+    if file_version is None:
+        print(f"ERROR: No '{version_key}' key in {path}")
+        sys.exit(1)
+
+    if file_version != REQUIRED_CONFIG_VERSION:
+        print(
+            f"ERROR: Version mismatch in {path}: "
+            f"expected {REQUIRED_CONFIG_VERSION}, got {file_version}"
+        )
+        sys.exit(1)
+
+
+def validate_all_configs(
+    setup_path: str = "config/setup.json",
+    rate_limits_path: str = "config/rate_limits.json",
+    logging_path: str = "config/logging_config.json",
+) -> None:
+    """Validate all config files at startup.
+
+    Args:
+        setup_path: Path to main setup config.
+        rate_limits_path: Path to rate limits config.
+        logging_path: Path to logging config.
+    """
+    validate_config_version(setup_path, "version")
+    validate_config_version(logging_path, "version")
+
+    # Rate limits has nested version under "rate_limits" key
+    rate_data = _load_json(rate_limits_path)
+    nested_version = rate_data.get("rate_limits", {}).get("version")
+    if nested_version != REQUIRED_CONFIG_VERSION:
+        print(
+            f"ERROR: Nested version mismatch in {rate_limits_path}: "
+            f"expected {REQUIRED_CONFIG_VERSION}, got {nested_version}"
+        )
+        sys.exit(1)
