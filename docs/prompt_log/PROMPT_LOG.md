@@ -132,6 +132,40 @@
 
 ---
 
+### Prompt 7: Phase 5 Services
+**User**: "start phase 5. Go over docs. Use the relevant skills when working. Remember they are not recommendations, but requirements"
+
+**Context**: Build Phase 5 — DebateState and DebateOrchestrator services.
+
+**Skills Applied**: modular-design, sdk-architecture, tdd-testing, code-review-config, project-setup, version-control
+
+**Output**:
+- DebateState: dataclass tracking topic, rounds, history, scores, winner (13 tests)
+- DebateOrchestrator: coordinates debate rounds with pro/con turns (8 tests)
+- PromptBuilder: constructs prompts for pro, con, and judge agents
+- Verdict: judge evaluation and result formatting
+- Per-algorithm PRD: PRD_debate_orchestration.md
+- Updated PLAN.md with new modules in project structure and Key Classes
+- Updated TODO.md marking Phase 5 complete
+- New branch: feature/services
+- 21 service tests total, 0 Ruff violations
+
+**Key Design**:
+- Semantic splits to respect 150-line rule (blank/comment lines excluded)
+- Orchestrator (119 lines) focuses on round flow
+- PromptBuilder (100 lines) handles prompt construction
+- Verdict (57 lines) handles judge evaluation and result formatting
+- DebateState as dataclass — simple, immutable-friendly state tracking
+
+**Lessons**:
+- Plan splits BEFORE writing code — initial orchestrator was 186 lines
+- Extract by concern: round execution vs prompt building vs verdict
+- Per-algorithm PRDs are required by project-setup skill — don't skip
+- Update PLAN.md project structure when adding new files
+- Prompt log is a requirement, not optional
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
