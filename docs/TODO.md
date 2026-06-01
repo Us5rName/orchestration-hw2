@@ -32,8 +32,8 @@
 - [x] ConAgent — con-side debater
 
 ## Phase 5: Services
-- [ ] DebateState — debate state tracking
-- [ ] DebateOrchestrator — manages debate flow
+- [x] DebateState — debate state tracking
+- [x] DebateOrchestrator — manages debate flow
 
 ## Phase 6: SDK & CLI
 - [ ] DebateSDK — single entry point
