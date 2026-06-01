@@ -65,7 +65,31 @@
 
 ---
 
-### Prompt 6: Phase 2 Shared Infrastructure
+### Prompt 6: Phase 3 LLM Providers
+**User**: "yes" (after branch creation discussion)
+
+**Context**: Build Phase 3 — LLM providers and search service.
+
+**Skills Applied**: sdk-architecture, modular-design, tdd-testing, code-review-config
+
+**Output**:
+- LLMProvider: abstract base with chat() interface (6 tests)
+- OpenAIProvider: OpenAI SDK, mocked tests (4 tests)
+- AnthropicProvider: Anthropic SDK, mocked tests (4 tests)
+- GeminiProvider: Google Genai SDK, mocked tests (4 tests)
+- SearchService: DuckDuckGo search, no API key (3 tests)
+- All providers inherit LLMProvider — zero code duplication
+- base_url configurable per provider (Ollama, LM Studio, proxies)
+- New branch: feature/llm-providers
+- 21 provider tests total, 0 Ruff violations
+
+**Lessons**:
+- Mock SDK clients in __init__ by patching before fixture creation
+- Patch module-level imports (e.g. genai not Genai for google-genai)
+
+---
+
+### Prompt 6b: Phase 2 Shared Infrastructure
 **User**: "go on. remember to read the skills curefully (They are requirements) and make short readable commits"
 
 **Context**: Build Phase 2 — ConfigManager, LogManager, ApiGatekeeper, Watchdog.

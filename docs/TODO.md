@@ -19,11 +19,11 @@
 - [x] Constants — immutable project constants
 
 ## Phase 3: LLM Providers
-- [ ] ILLMProvider — abstract base interface
-- [ ] OpenAIProvider — OpenAI API implementation
-- [ ] AnthropicProvider — Anthropic API implementation
-- [ ] GeminiProvider — Google Gemini API implementation
-- [ ] SearchService — DuckDuckGo search abstraction
+- [x] ILLMProvider — abstract base interface
+- [x] OpenAIProvider — OpenAI API implementation
+- [x] AnthropicProvider — Anthropic API implementation
+- [x] GeminiProvider — Google Gemini API implementation
+- [x] SearchService — DuckDuckGo search abstraction
 
 ## Phase 4: Agents
 - [ ] AgentBase — abstract base agent class
