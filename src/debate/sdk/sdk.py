@@ -111,6 +111,7 @@ class DebateSDK:
             topic=debate_cfg.get("topic", ""),
             max_rounds=debate_cfg.get("max_rounds", 10),
             watchdog=self.watchdog,
+            logger=self.logger,
         )
 
     def run_debate(self) -> dict:
