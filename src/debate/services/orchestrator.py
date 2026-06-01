@@ -1,19 +1,26 @@
 """DebateOrchestrator — manages debate flow and rounds.
 
-Input: judge_agent, pro_agent, con_agent, topic, max_rounds, watchdog
+Input: judge_agent, pro_agent, con_agent, topic, max_rounds, watchdog, logger
 Output: run() -> final verdict with winner and scores
 Setup: creates DebateState, coordinates agents through rounds
 """
 
 from ..agents.base_agent import AgentBase
 from .debate_state import DebateState
+from .orchestrator_logging import (
+    log_agent_response,
+    log_debate_complete,
+    log_debate_start,
+    log_round_start,
+    log_verdict,
+)
 from .prompt_builder import build_con_prompt, build_pro_prompt
 from .verdict import decide_winner, format_result, record_verdict
 
 
 class DebateOrchestrator:
     """
-    Input: judge_agent, pro_agent, con_agent, topic, max_rounds, watchdog
+    Input: judge_agent, pro_agent, con_agent, topic, max_rounds, watchdog, logger
     Output: run() -> dict with winner, scores, justification
     Setup: creates DebateState, enforces judge-mediated flow
     """
@@ -26,6 +33,7 @@ class DebateOrchestrator:
         topic: str,
         max_rounds: int,
         watchdog: object | None = None,
+        logger: object | None = None,
     ) -> None:
         """Initialize orchestrator with agents and debate config.
 
@@ -36,6 +44,7 @@ class DebateOrchestrator:
             topic: The debate topic.
             max_rounds: Maximum number of debate rounds.
             watchdog: Optional process monitor.
+            logger: LogManager instance for structured logging.
 
         Raises:
             ValueError: If max_rounds is less than 1.
@@ -47,6 +56,7 @@ class DebateOrchestrator:
         self.pro = pro_agent
         self.con = con_agent
         self.watchdog = watchdog
+        self.logger = logger
         self.state = DebateState(topic=topic, max_rounds=max_rounds)
 
     def run_round(self, round_number: int | None = None) -> dict:
@@ -63,8 +73,13 @@ class DebateOrchestrator:
         else:
             self.state.current_round += 1
 
+        log_round_start(self.logger, self.state.current_round, self.state.max_rounds)
+
         pro_response = self._run_pro_turn()
+        log_agent_response(self.logger, "PRO", pro_response)
+
         con_response = self._run_con_turn(pro_response)
+        log_agent_response(self.logger, "CON", con_response)
 
         return {
             "round": self.state.current_round,
@@ -78,12 +93,17 @@ class DebateOrchestrator:
         Returns:
             Dict with winner, scores, justification, and full history.
         """
+        log_debate_start(self.logger, self.state.topic, self.state.max_rounds)
+
         for _ in range(self.state.max_rounds):
             self.run_round()
 
         verdict = decide_winner(self.judge, self.state)
+        log_verdict(self.logger, verdict)
         record_verdict(self.state, verdict)
-        return format_result(verdict, self.state.history)
+        result = format_result(verdict, self.state.history)
+        log_debate_complete(self.logger, result["winner"], result["pro_score"], result["con_score"])
+        return result
 
     def _run_pro_turn(self) -> dict:
         """Execute pro agent's turn and record the argument.
