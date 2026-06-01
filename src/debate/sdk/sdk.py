@@ -68,12 +68,14 @@ class DebateSDK:
             Configured agent instance.
         """
         agent_cfg = self.config.get("agents", {}).get(role, {})
+        timeout = self.config.get("debate", {}).get("request_timeout_seconds", 60)
+        # Pass timeout to provider so API calls use the configured value
+        provider_cfg = {**agent_cfg, "timeout": timeout}
         provider = create_provider(
             agent_cfg.get("provider", "openai"),
-            agent_cfg,
+            provider_cfg,
         )
         topic = self.config.get("debate", {}).get("topic", "")
-        timeout = self.config.get("debate", {}).get("request_timeout_seconds", 60)
 
         if role == "judge":
             return JudgeAgent(
