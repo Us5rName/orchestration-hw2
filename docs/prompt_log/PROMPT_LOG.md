@@ -198,6 +198,42 @@
 
 ---
 
+### Prompt 9: Phase 7 Tests
+**User**: "now do it for phase 7"
+
+**Context**: Build Phase 7 — comprehensive test coverage to reach ≥85%.
+
+**Skills Applied**: tdd-testing, code-review-config, project-setup, version-control
+
+**Output**:
+- test_version.py: version constants (2 tests)
+- test_constants.py: all project constants (4 tests)
+- test_config_validator.py: config validation (5 tests)
+- test_prompt_builder.py: prompt building functions (7 tests)
+- test_verdict.py: verdict functions (3 tests)
+- test_menu.py: CLI menu with mocked input (4 tests)
+- test_orchestrator.py: added run() and round_number override tests
+- test_sdk.py: added get_logs with file test
+- test_debate_flow.py: integration test for full debate (3 tests)
+- Coverage: 96% (up from 76%, target was 85%)
+- 128 total tests, 0 Ruff violations
+- New branch: feature/tests
+
+**Key Design**:
+- Tests mirror src/ structure (tests/unit/test_<module>/)
+- All external dependencies mocked (API keys, file I/O, user input)
+- Integration test verifies end-to-end debate flow
+- Coverage report shows 96% — well above 85% requirement
+
+**Lessons**:
+- Use `side_effect=SystemExit(1)` to mock sys.exit properly
+- Combine nested `with` statements to satisfy SIM117
+- Use `pytest.raises` for tests that trigger SystemExit
+- Mock `builtins.input` for CLI tests
+- Coverage gaps are usually in newly added modules
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement

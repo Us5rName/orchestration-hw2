@@ -42,16 +42,18 @@
 - [x] main.py — entry point
 
 ## Phase 7: Tests (TDD)
-- [ ] Unit tests for ConfigManager
-- [ ] Unit tests for LogManager
-- [ ] Unit tests for ApiGatekeeper
-- [ ] Unit tests for Watchdog
-- [ ] Unit tests for LLM providers
-- [ ] Unit tests for agents
-- [ ] Unit tests for DebateOrchestrator
-- [ ] Unit tests for DebateSDK
-- [ ] Integration test for full debate flow
-- [ ] Verify ≥85% coverage
+- [x] Unit tests for ConfigManager
+- [x] Unit tests for LogManager
+- [x] Unit tests for ApiGatekeeper
+- [x] Unit tests for Watchdog
+- [x] Unit tests for LLM providers
+- [x] Unit tests for agents
+- [x] Unit tests for DebateOrchestrator
+- [x] Unit tests for DebateSDK
+- [x] Unit tests for version, constants, config_validator
+- [x] Unit tests for prompt_builder, verdict, CLI menu
+- [x] Integration test for full debate flow
+- [x] Verify ≥85% coverage (96% achieved)
 
 ## Phase 8: Documentation & Polish
 - [ ] README.md with screenshots
