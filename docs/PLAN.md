@@ -160,6 +160,8 @@ graph TD
 | `SearchService` | Internet search abstraction |
 | `DebateOrchestrator` | Manages debate flow and rounds |
 | `DebateState` | Tracks debate state, arguments, scores |
+| `PromptBuilder` | Constructs debate prompts for agents |
+| `Verdict` | Judge evaluation and result formatting |
 | `DebateSDK` | Single entry point for all operations |
 | `ConfigManager` | Loads and validates configuration |
 | `LogManager` | Structured logging with FIFO rotation |
@@ -253,6 +255,8 @@ skills-test/
 │       ├── services/
 │       │   ├── orchestrator.py
 │       │   ├── debate_state.py
+│       │   ├── prompt_builder.py
+│       │   ├── verdict.py
 │       │   └── search_service.py
 │       ├── agents/
 │       │   ├── base_agent.py

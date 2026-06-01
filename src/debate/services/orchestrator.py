@@ -7,14 +7,13 @@ Setup: creates DebateState, coordinates agents through rounds
 
 from ..agents.base_agent import AgentBase
 from .debate_state import DebateState
-from .prompt_builder import build_con_prompt, build_pro_prompt, build_verdict_prompt
+from .prompt_builder import build_con_prompt, build_pro_prompt
+from .verdict import decide_winner, format_result, record_verdict
 
 
 class DebateOrchestrator:
     """
-    Input: judge_agent (AgentBase), pro_agent (AgentBase),
-           con_agent (AgentBase), topic (str), max_rounds (int),
-           watchdog (optional)
+    Input: judge_agent, pro_agent, con_agent, topic, max_rounds, watchdog
     Output: run() -> dict with winner, scores, justification
     Setup: creates DebateState, enforces judge-mediated flow
     """
@@ -82,10 +81,9 @@ class DebateOrchestrator:
         for _ in range(self.state.max_rounds):
             self.run_round()
 
-        verdict = self._decide_winner()
-        self._record_verdict(verdict)
-
-        return self._format_result(verdict)
+        verdict = decide_winner(self.judge, self.state)
+        record_verdict(self.state, verdict)
+        return format_result(verdict, self.state.history)
 
     def _run_pro_turn(self) -> dict:
         """Execute pro agent's turn and record the argument.
@@ -119,41 +117,3 @@ class DebateOrchestrator:
             references=con_response.get("references", []),
         )
         return con_response
-
-    def _decide_winner(self) -> dict:
-        """Ask judge to evaluate the debate and declare a winner.
-
-        Returns:
-            Dict with winner, scores, and justification.
-        """
-        verdict_prompt = build_verdict_prompt(self.state)
-        return self.judge.think(verdict_prompt)
-
-    def _record_verdict(self, verdict: dict) -> None:
-        """Record the judge's verdict in the debate state.
-
-        Args:
-            verdict: Judge's verdict dict with winner and scores.
-        """
-        self.state.set_verdict(
-            winner=verdict.get("winner", ""),
-            pro_score=verdict.get("pro_score", 0),
-            con_score=verdict.get("con_score", 0),
-        )
-
-    def _format_result(self, verdict: dict) -> dict:
-        """Format the final result with verdict and history.
-
-        Args:
-            verdict: Judge's verdict dict.
-
-        Returns:
-            Complete result dict.
-        """
-        return {
-            "winner": verdict.get("winner"),
-            "pro_score": verdict.get("pro_score"),
-            "con_score": verdict.get("con_score"),
-            "justification": verdict.get("justification", ""),
-            "history": self.state.history,
-        }
