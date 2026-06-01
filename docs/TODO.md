@@ -26,10 +26,10 @@
 - [x] SearchService — DuckDuckGo search abstraction
 
 ## Phase 4: Agents
-- [ ] AgentBase — abstract base agent class
-- [ ] JudgeAgent — judge/mediator agent
-- [ ] ProAgent — pro-side debater
-- [ ] ConAgent — con-side debater
+- [x] AgentBase — abstract base agent class
+- [x] JudgeAgent — judge/mediator agent
+- [x] ProAgent — pro-side debater
+- [x] ConAgent — con-side debater
 
 ## Phase 5: Services
 - [ ] DebateState — debate state tracking

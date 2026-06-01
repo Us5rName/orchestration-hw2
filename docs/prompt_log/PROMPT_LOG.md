@@ -65,6 +65,27 @@
 
 ---
 
+### Prompt 6a: Phase 4 Agents
+**User**: "yes. Remember that the agents must use skills"
+
+**Context**: Build Phase 4 — AgentBase + 3 concrete agents with distinct skills.
+
+**Skills Applied**: sdk-architecture, modular-design, tdd-testing, code-review-config
+
+**Output**:
+- AgentBase: abstract base with think(), JSON parsing (6 tests)
+- ProAgent: research-analysis skill — evidence, data, citations (4 tests)
+- ConAgent: quality-standards skill — critical evaluation, fallacies (4 tests)
+- JudgeAgent: persuasiveness scoring, no ties, JSON verdict (5 tests)
+- 19 agent tests total, 0 Ruff violations
+- New branch: feature/agents
+
+**Key Design**: Distinct skills guarantee real contradiction:
+- Pro cites data → Con challenges methodology
+- Judge scores persuasion, not facts
+
+---
+
 ### Prompt 6: Phase 3 LLM Providers
 **User**: "yes" (after branch creation discussion)
 
