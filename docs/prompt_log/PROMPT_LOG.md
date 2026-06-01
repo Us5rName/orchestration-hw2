@@ -234,6 +234,56 @@
 
 ---
 
+### Prompt 10: Fix Timeout Disconnect
+**User**: "Looking at the grep results, `timeout` flows through the codebase but there's a disconnect — the config value reaches the agents but isn't actually used for API calls."
+
+**Context**: Previous agent identified that `ProviderFactory` creates providers with hardcoded `timeout=60` instead of using the configured `request_timeout_seconds` from `setup.json`.
+
+**Skills Applied**: code-review-config, tdd-testing, version-control
+
+**Output**:
+- Fixed `sdk.py` to read timeout BEFORE creating provider and inject it into provider config
+- Added 8 config propagation tests split into 3 semantic files
+- Tests verify timeout, model, temperature, base_url, topic all reach their destinations
+- Coverage: 96%, 136 total tests, 0 Ruff violations
+
+**Key Design**:
+- Config values must flow through the entire chain, not stop at agents
+- ProviderFactory reads `timeout` from config dict — SDK must inject it
+- Tests split semantically: timeout propagation, agent→provider, agent→agent
+
+**Lessons**:
+- Always verify config values reach their final destination, not just intermediate stops
+- Use `mock_factory.call_args` to capture what was passed to mocked functions
+- Extract shared test fixtures to `conftest.py` to avoid duplication
+
+---
+
+### Prompt 11: Enhance Debate Logging
+**User**: "the logs don't give information. please fix it. the logs must include number of tool calls per response and the responses themselves, in addition to the decisions of the judge."
+
+**Context**: SDK only logged "DebateSDK initialized", "Debate started", "Debate complete". No round-level detail, no agent responses, no judge decisions.
+
+**Skills Applied**: modular-design, project-setup, version-control
+
+**Output**:
+- Created `orchestrator_logging.py` — dedicated module for debate event logging
+- Orchestrator now logs: round progress, full agent responses, references, judge verdict with scores and justification
+- SDK wires its LogManager to the orchestrator
+- Split orchestrator semantically: core coordination vs logging concern
+
+**Key Design**:
+- Logging as separate module with pure functions taking logger as parameter
+- No truncation — full responses and justifications logged
+- Logger is optional — no-op when not provided (backwards compatible)
+
+**Lessons**:
+- Split semantically by concern, not just by line count
+- Logging is a cross-cutting concern that deserves its own module
+- Pure functions for logging make it independently testable and swappable
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
