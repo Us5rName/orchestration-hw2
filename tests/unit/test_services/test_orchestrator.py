@@ -116,3 +116,28 @@ class TestOrchestratorRunRound:
         orchestrator.run_round()
         assert len(orchestrator.state.history) == 2
         assert orchestrator.state.current_round == 1
+
+    def test_run_round_with_override(self, orchestrator: DebateOrchestrator) -> None:
+        """run_round respects round_number override."""
+        orchestrator.pro.think.return_value = {"content": "Pro", "references": []}
+        orchestrator.con.think.return_value = {"content": "Con", "references": []}
+        orchestrator.run_round(round_number=5)
+        assert orchestrator.state.current_round == 5
+
+
+class TestOrchestratorRun:
+    """Test running full debate."""
+
+    def test_run_completes_all_rounds(self, orchestrator: DebateOrchestrator) -> None:
+        """run() completes all configured rounds."""
+        orchestrator.pro.think.return_value = {"content": "Pro", "references": []}
+        orchestrator.con.think.return_value = {"content": "Con", "references": []}
+        orchestrator.judge.think.return_value = {
+            "winner": "pro",
+            "pro_score": 80,
+            "con_score": 70,
+            "justification": "Better",
+        }
+        result = orchestrator.run()
+        assert result["winner"] == "pro"
+        assert len(orchestrator.state.history) == 6  # 2 args per round * 3 rounds

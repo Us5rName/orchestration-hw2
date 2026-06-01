@@ -90,3 +90,13 @@ class TestSDKGetLogs:
         with patch("pathlib.Path.exists", return_value=False):
             result = sdk.get_logs()
         assert result == ["No log file found."]
+
+    def test_get_logs_with_file(self, sdk: DebateSDK) -> None:
+        """get_logs returns lines from existing log file."""
+        fake_lines = ["line1", "line2", "line3"]
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value="\n".join(fake_lines)),
+        ):
+            result = sdk.get_logs(count=2)
+        assert result == ["line2", "line3"]
