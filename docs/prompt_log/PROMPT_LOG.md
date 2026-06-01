@@ -166,6 +166,38 @@
 
 ---
 
+### Prompt 8: Phase 6 SDK & CLI
+**User**: "Start phase 6. in addition to the skills, use the information from the prompt log"
+
+**Context**: Build Phase 6 — DebateSDK, TerminalMenu, main.py entry point.
+
+**Skills Applied**: sdk-architecture, modular-design, tdd-testing, code-review-config, project-setup, version-control
+
+**Output**:
+- DebateSDK: single entry point wiring all components (140 lines, 5 tests)
+- ProviderFactory: creates LLM providers from config (59 lines, 6 tests)
+- TerminalMenu: CLI menu with start debate, view logs, configure, exit (63 lines)
+- main.py: updated entry point creating SDK and launching menu (19 lines)
+- Updated PLAN.md with SDK/CLI modules
+- Updated TODO.md marking Phase 6 complete
+- New branch: feature/sdk-cli
+- 11 SDK tests total, 0 Ruff violations
+
+**Key Design**:
+- SDK is the single entry point — all business logic flows through it
+- CLI is a thin presentation layer that delegates to SDK (no business logic)
+- ProviderFactory reads API keys from environment variables
+- SDK loads config, creates providers, agents, orchestrator
+- Prompt log lessons applied: plan splits BEFORE writing code
+
+**Lessons**:
+- Mock provider classes in tests (real providers need API keys)
+- Use `@patch` on module-level imports for provider factories
+- SDK should not exceed 150 lines — extract provider factory early
+- TerminalMenu delegates ALL logic to SDK per sdk-architecture skill
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement

@@ -36,9 +36,10 @@
 - [x] DebateOrchestrator — manages debate flow
 
 ## Phase 6: SDK & CLI
-- [ ] DebateSDK — single entry point
-- [ ] TerminalMenu — CLI menu interface
-- [ ] main.py — entry point
+- [x] DebateSDK — single entry point
+- [x] ProviderFactory — creates providers from config
+- [x] TerminalMenu — CLI menu interface
+- [x] main.py — entry point
 
 ## Phase 7: Tests (TDD)
 - [ ] Unit tests for ConfigManager

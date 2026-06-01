@@ -162,7 +162,9 @@ graph TD
 | `DebateState` | Tracks debate state, arguments, scores |
 | `PromptBuilder` | Constructs debate prompts for agents |
 | `Verdict` | Judge evaluation and result formatting |
-| `DebateSDK` | Single entry point for all operations |
+| `DebateSDK` | Single entry point — wires all components |
+| `ProviderFactory` | Creates LLM providers from config |
+| `TerminalMenu` | CLI menu interface |
 | `ConfigManager` | Loads and validates configuration |
 | `LogManager` | Structured logging with FIFO rotation |
 | `Watchdog` | Process monitoring and keep-alive |
@@ -251,7 +253,8 @@ skills-test/
 │   └── debate/
 │       ├── __init__.py
 │       ├── sdk/
-│       │   └── sdk.py
+│       │   ├── sdk.py
+│       │   └── provider_factory.py
 │       ├── services/
 │       │   ├── orchestrator.py
 │       │   ├── debate_state.py
@@ -274,7 +277,7 @@ skills-test/
 │       │   ├── logger.py
 │       │   └── watchdog.py
 │       ├── cli/
-│       │   └── menu.py
+│       │   └── menu.py  # TerminalMenu
 │       └── constants.py
 ├── tests/
 │   ├── unit/
