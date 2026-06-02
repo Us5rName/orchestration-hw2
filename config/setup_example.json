@@ -2,29 +2,29 @@
   "version": "1.00",
   "debate": {
     "topic": "Real Madrid vs Barcelona - which is better?",
-    "max_rounds": 5,
-    "max_tokens_per_agent": 50000,
-    "request_timeout_seconds": 600
+    "max_rounds": 10,
+    "max_tokens_per_agent": 500,
+    "request_timeout_seconds": 60
   },
   "agents": {
     "judge": {
       "provider": "openai",
-      "model": "openai/gpt-oss-120b:free",
-      "base_url": "https://openrouter.ai/api/v1",
+      "model": "gpt-4o-mini",
+      "base_url": null,
       "temperature": 0.3,
       "skills": ["persuasion-scoring"]
     },
     "pro": {
       "provider": "openai",
-      "model": "openai/gpt-oss-120b:free",
-      "base_url": "https://openrouter.ai/api/v1",
+      "model": "gpt-4o-mini",
+      "base_url": null,
       "temperature": 0.7,
       "skills": ["research-analysis"]
     },
     "con": {
       "provider": "openai",
-      "model": "openai/gpt-oss-120b:free",
-      "base_url": "https://openrouter.ai/api/v1",
+      "model": "gpt-4o-mini",
+      "base_url": null,
       "temperature": 0.7,
       "skills": ["research-analysis", "quality-standards"]
     }
