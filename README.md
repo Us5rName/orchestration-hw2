@@ -182,6 +182,48 @@ Skills are modular classes implementing `AgentSkill`. They inject instruction te
 2. Register it in `sdk/provider_factory.py`.
 3. Set `"provider": "my-provider"` in agent config.
 
+## Token Cost Analysis
+
+Live run on `openai/gpt-oss-20b:free` (OpenRouter), 1 round, topic: Real Madrid vs Barcelona.
+
+### Actual Token Usage (1 round, 2026-06-02)
+
+| Agent | Input tokens | Output tokens | Total |
+|-------|-------------|---------------|-------|
+| Pro | 1,096 | 511 | 1,607 |
+| Con | 1,865 | 1,227 | 3,092 |
+| Judge | 1,770 | 166 | 1,936 |
+| **Total** | **4,731** | **1,904** | **6,635** |
+
+### Cost Per Model (1 round)
+
+| Model | Input $/1M | Output $/1M | Estimated cost |
+|-------|-----------|-------------|----------------|
+| `gpt-oss-20b:free` (OpenRouter) | $0 | $0 | **$0.000** |
+| GPT-4o-mini | $0.15 | $0.60 | **$0.0018** |
+| GPT-4o | $2.50 | $10.00 | **$0.031** |
+| Claude 3.5 Haiku | $0.80 | $4.00 | **$0.011** |
+| Gemini 1.5 Flash | $0.075 | $0.30 | **$0.0009** |
+
+### 5-Round Debate Estimate
+
+Pro/Con scale linearly with rounds; Judge sees the full history once at the end (~5× input).
+Estimated totals: **~22,800 input / ~9,100 output tokens**.
+
+| Model | 5-round estimate |
+|-------|-----------------|
+| GPT-4o-mini | **~$0.009** |
+| GPT-4o | **~$0.15** |
+| Claude 3.5 Haiku | **~$0.055** |
+| Gemini 1.5 Flash | **~$0.004** |
+
+### Optimization Strategies
+
+1. **Free-tier models** — OpenRouter free models cost $0; ideal for development and demos.
+2. **Reduce rounds** — each round adds ~5,000 tokens; lower `max_rounds` in `config/setup.json`.
+3. **Gemini Flash** — 10–30× cheaper than GPT-4o at comparable quality for debate tasks.
+4. **Limit output** — lower `max_tokens_per_agent` to cap response size per turn.
+
 ## Tests & Quality
 
 ```
