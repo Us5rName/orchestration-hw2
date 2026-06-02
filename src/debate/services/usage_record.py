@@ -31,3 +31,38 @@ class UsageRecord:
     total_tokens: int
     round_number: int
     available: bool
+
+
+def build_from_delta(
+    provider_name: str,
+    model: str,
+    role: str,
+    snapshot_before: dict,
+    snapshot_after: dict,
+    round_number: int,
+) -> "UsageRecord":
+    """Build a UsageRecord from cumulative usage snapshots taken before and after a call.
+
+    Args:
+        provider_name: Provider identifier string.
+        model: Model name string.
+        role: Agent role ('judge', 'pro', 'con').
+        snapshot_before: get_usage() result captured before the agent call.
+        snapshot_after: get_usage() result captured after the agent call.
+        round_number: Debate round number; 0 for judge evaluation.
+
+    Returns:
+        UsageRecord with delta tokens; available=False when both deltas are zero.
+    """
+    in_d = max(int(snapshot_after.get("input_tokens", 0)) - int(snapshot_before.get("input_tokens", 0)), 0)
+    out_d = max(int(snapshot_after.get("output_tokens", 0)) - int(snapshot_before.get("output_tokens", 0)), 0)
+    return UsageRecord(
+        provider_name=provider_name,
+        model=model,
+        role=role,
+        input_tokens=in_d,
+        output_tokens=out_d,
+        total_tokens=in_d + out_d,
+        round_number=round_number,
+        available=in_d > 0 or out_d > 0,
+    )
