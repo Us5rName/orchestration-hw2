@@ -412,6 +412,43 @@
 
 ---
 
+---
+
+### Prompt 17: Path Handling Refactor (2026-06-03)
+**User**: "Your task is to refactor the repository's path handling into a robust, centralized, best-practice design." Full specification: `paths.py` as single source of truth; no `sys.exit()` in library modules; entry-point moved to `debate.main`; all default-path constants removed from `constants.py`; CWD-independent everywhere.
+
+**Context**: Paths were previously a mix of hardcoded relative strings (`"config/setup.json"`), `sys.exit()` calls in `config_validator.py`, and a broken `pyproject.toml` entry point (`src.main:main` fails for installed packages in src/ layout).
+
+**Skills Applied**: final-checklist
+
+**Output**:
+- `src/debate/shared/paths.py` (new) — `_find_project_root()` walks upward from `__file__` until it finds a directory with both `pyproject.toml` and `config/`; exposes `PROJECT_ROOT`, `CONFIG_DIR`, `LOGS_DIR`, all `DEFAULT_*` path constants, `resolve_project_path()`, `require_file()`, `require_dir()`; `ProjectPathError(RuntimeError)` for path errors
+- `src/debate/main.py` (new) — real entry point; only module permitted to call `sys.exit()`; catches `ConfigValidationError` and exits with code 1
+- `src/main.py` — reduced to a 4-line legacy shim (`from debate.main import main`)
+- `pyproject.toml` — entry point fixed from `"src.main:main"` → `"debate.main:main"`; coverage omit updated
+- `src/debate/shared/config.py` — `ConfigManager(path: str | Path | None = None)` resolves via `resolve_project_path()`; uses `path.open()` throughout
+- `src/debate/shared/config_validator.py` — all 5 `sys.exit()` calls removed; `ConfigValidationError(RuntimeError)` added; `validate_pricing()` and `validate_agent_skills()` raise `ConfigValidationError`; default paths from paths module
+- `src/debate/shared/logger.py` — `log_dir` and `log_file` properties added; resolves relative log directories to `PROJECT_ROOT`
+- `src/debate/sdk/sdk.py` — `config_path` default `None`; `get_logs()` uses `self.logger.log_file` (absolute, always correct)
+- `src/debate/cli/menu.py` — option 3 shows actual resolved path instead of hardcoded string
+- `src/debate/constants.py` — 3 path string constants removed; comment points to `debate.shared.paths`
+- Tests: new `test_paths.py` (21 tests); updated `test_config_validator.py`, `test_config.py`, `test_logger.py`, `test_constants.py` — CWD-independence verified via `monkeypatch.chdir(tmp_path)`
+- README: PyCharm debug setup section added; project layout updated; test count corrected to 261
+
+**Key Design**:
+- Root detection from `__file__` (not `Path.cwd()`) makes every module CWD-independent; works correctly whether invoked via `uv run debate`, `python -m debate.main`, or PyCharm module-run configuration
+- `resolve_project_path(path)`: absolute paths pass through unchanged; relative paths are anchored to `PROJECT_ROOT`; `~` expansion applied universally
+- Library modules raise exceptions; only the entry point converts to `SystemExit`
+- `LogManager.log_file` property exposes `handler._current_file` so `SDK.get_logs()` never has to reconstruct the log path from config
+
+**Key Lessons**:
+- PyCharm *Script path* mode sets CWD to the script's directory, which breaks src/ layout imports; *Module name* mode (`debate.main`) is the correct approach
+- `sys.exit()` in library code is a design smell — callers lose the ability to catch and recover; `RuntimeError` subclasses keep all options open
+- `str | Path | None` for path parameters is the right public API: `None` means "use the project default", string/Path means "use this exact path"
+- Ruff I001 fires on long single-line imports; break into parenthesised multi-line blocks
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
@@ -419,3 +456,5 @@
 3. Meaningful commits — what changed and why
 4. Prompt log — document AI-assisted decisions
 5. TDD cycle — RED (test) → GREEN (impl) → REFACTOR (ruff) → commit
+6. CWD-independent paths — anchor to `__file__`, not `Path.cwd()`; test with `monkeypatch.chdir()`
+7. No `sys.exit()` in library modules — raise typed `RuntimeError` subclasses; let entry point convert to `SystemExit`

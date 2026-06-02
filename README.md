@@ -39,8 +39,29 @@ cp .env-example .env
 # Edit .env — add at least one provider key
 
 # Run
-uv run python src/main.py
+uv run debate
 ```
+
+### PyCharm / IDE Debug Setup
+
+Because the project uses a `src/` layout, running `src/main.py` directly causes
+import errors (`ModuleNotFoundError: No module named 'debate'`). Use one of these approaches instead:
+
+**Option A — uv run (terminal, always works)**
+```bash
+uv run debate
+```
+
+**Option B — PyCharm Run/Debug Configuration**
+
+1. Open *Run → Edit Configurations* → `+` → *Python*
+2. Set **Module name** to `debate.main` (not *Script path*)
+3. Set **Working directory** to the project root (`orchestration-hw2/`)
+4. Set **Python interpreter** to the `.venv` created by `uv sync`
+5. Click *OK* — use this configuration for all debug sessions
+
+The entry point `debate.main` detects the project root by walking upward from
+`__file__`, so it works correctly from any working directory.
 
 ### Minimal `.env`
 
@@ -249,19 +270,19 @@ Estimated totals: **~22,800 input / ~9,100 output tokens**.
 ## Tests & Quality
 
 ```
-230 passed  ·  99% coverage  ·  0 Ruff violations
+261 passed  ·  98.5% coverage  ·  0 Ruff violations
 ```
 
 Run tests:
 
 ```bash
-uv run --with pytest --with pytest-cov pytest --cov=src
+uv run pytest --cov=debate
 ```
 
 Run linter:
 
 ```bash
-uv run --with ruff ruff check .
+uv run ruff check .
 ```
 
 ## Project Layout
@@ -269,14 +290,15 @@ uv run --with ruff ruff check .
 ```
 orchestration-hw2/
 ├── src/
-│   ├── main.py                   # Entry point
+│   ├── main.py                   # Legacy shim → debate.main
 │   └── debate/
+│       ├── main.py               # Real entry point (uv run debate)
 │       ├── agents/               # ProAgent, ConAgent, JudgeAgent, AgentBase
 │       ├── cli/                  # TerminalMenu
 │       ├── providers/            # OpenAI, Anthropic, Gemini + ILLMProvider
 │       ├── sdk/                  # DebateSDK, ProviderFactory, AgentFactory
 │       ├── services/             # Orchestrator, DebateState, PromptBuilder, Verdict
-│       ├── shared/               # ConfigManager, LogManager, ApiGatekeeper, Watchdog
+│       ├── shared/               # ConfigManager, LogManager, ApiGatekeeper, Watchdog, paths
 │       └── skills/               # AgentSkill ABC + 3 concrete skills + SkillRegistry
 ├── tests/
 │   ├── unit/                     # Module-level unit tests
