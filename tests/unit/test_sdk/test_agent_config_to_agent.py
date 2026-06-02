@@ -7,6 +7,7 @@ setup.json are stored on the agent instance after creation.
 from unittest.mock import MagicMock, patch
 
 from debate.sdk.sdk import DebateSDK
+from tests.unit.test_sdk.conftest import apply_typed_config
 
 
 class TestAgentConfigToAgent:
@@ -21,6 +22,7 @@ class TestAgentConfigToAgent:
             patch("debate.sdk.sdk.create_provider", return_value=MagicMock()),
         ):
             mock_cm.return_value.get = MagicMock(side_effect=mock_get_factory(base_config))
+            apply_typed_config(mock_cm.return_value, base_config)
             sdk = DebateSDK(config_path="config/setup.json")
             agent = sdk._create_agent("pro")
 
@@ -35,6 +37,7 @@ class TestAgentConfigToAgent:
             patch("debate.sdk.sdk.create_provider", return_value=MagicMock()),
         ):
             mock_cm.return_value.get = MagicMock(side_effect=mock_get_factory(base_config))
+            apply_typed_config(mock_cm.return_value, base_config)
             sdk = DebateSDK(config_path="config/setup.json")
             agent = sdk._create_agent("con")
 
@@ -49,6 +52,7 @@ class TestAgentConfigToAgent:
             patch("debate.sdk.sdk.create_provider", return_value=MagicMock()),
         ):
             mock_cm.return_value.get = MagicMock(side_effect=mock_get_factory(base_config))
+            apply_typed_config(mock_cm.return_value, base_config)
             sdk = DebateSDK(config_path="config/setup.json")
             agent = sdk._create_agent("judge")
 

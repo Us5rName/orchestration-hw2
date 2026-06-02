@@ -10,6 +10,7 @@ from ..agents.con_agent import ConAgent
 from ..agents.judge_agent import JudgeAgent
 from ..agents.pro_agent import ProAgent
 from ..providers.base_provider import LLMProvider
+from ..shared.protocols import LoggerProtocol
 from ..skills.registry import SkillRegistry
 
 
@@ -20,7 +21,7 @@ def create_agent(
     topic: str,
     timeout: float,
     registry: SkillRegistry,
-    logger: object | None = None,
+    logger: LoggerProtocol | None = None,
 ) -> JudgeAgent | ProAgent | ConAgent:
     """Create an agent with skills resolved from the SkillRegistry.
 

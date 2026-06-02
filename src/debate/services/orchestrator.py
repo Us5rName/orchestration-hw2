@@ -6,6 +6,8 @@ Setup: creates DebateState, coordinates agents through rounds
 """
 
 from ..agents.base_agent import AgentBase
+from ..shared.protocols import LoggerProtocol
+from ..shared.watchdog import Watchdog
 from .cost_calculator import summarize_debate, summarize_round
 from .debate_state import DebateState
 from .orchestrator_logging import (
@@ -36,8 +38,8 @@ class DebateOrchestrator:
         con_agent: AgentBase,
         topic: str,
         max_rounds: int,
-        watchdog: object | None = None,
-        logger: object | None = None,
+        watchdog: Watchdog | None = None,
+        logger: LoggerProtocol | None = None,
         pricing: dict | None = None,
     ) -> None:
         """Initialize orchestrator with agents and debate config.

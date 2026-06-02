@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from debate.sdk.sdk import DebateSDK
+from tests.unit.test_sdk.conftest import apply_typed_config
 
 
 @pytest.fixture
@@ -45,6 +46,7 @@ def sdk(mock_config_data: dict) -> DebateSDK:
 
     with patch("debate.sdk.sdk.ConfigManager") as mock_cm:
         mock_cm.return_value.get = MagicMock(side_effect=mock_get)
+        apply_typed_config(mock_cm.return_value, mock_config_data)
         return DebateSDK(config_path="config/setup.json")
 
 
@@ -120,6 +122,7 @@ class TestSDKSkillRegistry:
             "debate.sdk.sdk.create_provider"
         ) as mock_prov:
             mock_cm.return_value.get = MagicMock(side_effect=mock_get)
+            apply_typed_config(mock_cm.return_value, mock_config_data)
             mock_prov.return_value = MagicMock()
             sdk = DebateSDK(config_path="config/setup.json")
             agent = sdk._create_agent("pro")

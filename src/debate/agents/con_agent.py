@@ -4,6 +4,8 @@ Skills injected via config; defaults to quality-standards for critical
 evaluation, optionally combined with research-analysis for counter-evidence.
 """
 
+from ..providers.base_provider import LLMProvider
+from ..shared.protocols import LoggerProtocol
 from ..skills.base_skill import AgentSkill
 from .base_agent import AgentBase
 
@@ -17,13 +19,13 @@ class ConAgent(AgentBase):
 
     def __init__(
         self,
-        provider: object,
+        provider: LLMProvider,
         model: str,
         temperature: float,
         timeout: float,
         topic: str,
         skills: list[AgentSkill] | None = None,
-        logger: object | None = None,
+        logger: LoggerProtocol | None = None,
     ) -> None:
         """Initialize ConAgent.
 

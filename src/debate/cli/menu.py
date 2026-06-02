@@ -1,9 +1,11 @@
 """TerminalMenu — interactive CLI for the debate system.
 
-Input: sdk (DebateSDK)
+Input: sdk (DebateSDKProtocol)
 Output: interactive menu loop with options
 Setup: delegates all logic to SDK
 """
+
+from ..shared.protocols import DebateSDKProtocol
 
 
 class TerminalMenu:
@@ -13,7 +15,7 @@ class TerminalMenu:
     Setup: thin presentation layer, delegates to SDK
     """
 
-    def __init__(self, sdk: object) -> None:
+    def __init__(self, sdk: DebateSDKProtocol) -> None:
         """Initialize menu with SDK.
 
         Args:

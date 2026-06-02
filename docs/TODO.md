@@ -116,13 +116,20 @@
   - `test_invalid_agent_output_raises` — Branch 4 will validate agent output
   - `test_winner_must_be_pro_or_con` — Branch 5 will enforce winner validation
 
-### Branch 2 — refactor/typed-config-sdk-boundary
-- [ ] Introduce typed config section dataclasses or models (DebateConfig, AgentConfig, GatekeeperConfig, etc.)
-- [ ] Make `ConfigManager` expose typed accessors in addition to raw `get()`
-- [ ] Type the `DebateSDK` public boundary (no `object` parameters)
-- [ ] Type the CLI/menu boundary — accept a concrete `DebateSDK` or narrow `Protocol`
-- [ ] Type agents: replace `provider: object` with `provider: LLMProvider`
-- [ ] Type the logger boundary consistently (`LogManager | None` throughout)
+### Branch 2 — refactor/typed-config-sdk-boundary ✅
+- [x] Add `src/debate/shared/config_models.py` — `DebateConfig`, `AgentConfig`, `LoggingConfig` (with `to_dict()`), `PricingRoleConfig`, `PricingConfig` dataclasses with `from_dict()` classmethods
+- [x] Add `src/debate/shared/protocols.py` — `LoggerProtocol` (structural, `@runtime_checkable`), `DebateSDKProtocol`
+- [x] `ConfigManager` — typed property accessors: `.debate_config`, `.logging_config`, `.gatekeeper_config` (returns `RateLimitConfig`), `.pricing_config`, `.agent_config(role)`
+- [x] `DebateSDK` — uses typed config properties throughout; no raw `config.get("section", {})` calls
+- [x] `TerminalMenu` — `sdk: DebateSDKProtocol` (replaces `sdk: object`)
+- [x] All agents (`ProAgent`, `ConAgent`, `JudgeAgent`, `AgentBase`) — `provider: LLMProvider`, `logger: LoggerProtocol | None`
+- [x] `DebateOrchestrator` — `watchdog: Watchdog | None`, `logger: LoggerProtocol | None`
+- [x] `orchestrator_logging.py` — all 8 functions use `logger: LoggerProtocol | None`
+- [x] `agent_factory.py` — `logger: LoggerProtocol | None`
+- [x] Add `tests/fakes/logger.py` — `FakeLogger` implementing `LoggerProtocol` with `.messages` property
+- [x] `test_base_agent_logging.py` and `test_orchestrator_logging.py` — use `FakeLogger` instead of bare `MagicMock`
+- [x] SDK tests updated — `apply_typed_config()` helper in conftest wires new typed accessors on mocked `ConfigManager`
+- **Result**: 264 passed · 3 xfailed · 97.69% coverage · 0 Ruff violations
 
 ### Branch 3 — refactor/provider-result-contract
 - [ ] Define an internal `ProviderResult` datatype (response text + usage metadata)
