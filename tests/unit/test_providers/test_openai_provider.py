@@ -4,6 +4,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from debate.providers.openai_provider import OpenAIProvider
+from tests.unit.test_providers.contract import (
+    assert_base_attrs,
+    assert_usage_recorded,
+    assert_usage_zero,
+)
 
 
 def _make_provider() -> OpenAIProvider:
@@ -25,8 +30,7 @@ class TestOpenAIProviderInit:
         """Provider inherits LLMProvider attributes."""
         mock_openai.return_value = MagicMock()
         prov = _make_provider()
-        assert prov.model == "gpt-4o-mini"
-        assert prov.temperature == 0.7
+        assert_base_attrs(prov, "gpt-4o-mini", 0.7)
         assert prov.timeout == 30.0
 
     @patch("debate.providers.openai_provider.OpenAI")
@@ -145,7 +149,7 @@ class TestOpenAIProviderUsageTracking:
         resp.usage = None
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 0, "output_tokens": 0}
+        assert_usage_zero(prov)
 
     @patch("debate.providers.openai_provider.OpenAI")
     def test_usage_dict_records_tokens(self, mock_openai: MagicMock) -> None:
@@ -156,7 +160,7 @@ class TestOpenAIProviderUsageTracking:
         resp.usage = {"prompt_tokens": 10, "completion_tokens": 5}
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 10, "output_tokens": 5}
+        assert_usage_recorded(prov, 10, 5)
 
     @patch("debate.providers.openai_provider.OpenAI")
     def test_usage_typed_object_records_tokens(self, mock_openai: MagicMock) -> None:
@@ -167,4 +171,4 @@ class TestOpenAIProviderUsageTracking:
         resp.usage = SimpleNamespace(prompt_tokens=20, completion_tokens=10)
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 20, "output_tokens": 10}
+        assert_usage_recorded(prov, 20, 10)

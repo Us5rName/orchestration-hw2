@@ -4,6 +4,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from debate.providers.gemini_provider import GeminiProvider
+from tests.unit.test_providers.contract import (
+    assert_base_attrs,
+    assert_usage_recorded,
+    assert_usage_zero,
+)
 
 
 def _make_provider() -> GeminiProvider:
@@ -25,8 +30,7 @@ class TestGeminiProviderInit:
         """Provider inherits LLMProvider attributes."""
         mock_genai.Genai.return_value = MagicMock()
         prov = _make_provider()
-        assert prov.model == "gemini-1.5-flash"
-        assert prov.temperature == 0.7
+        assert_base_attrs(prov, "gemini-1.5-flash", 0.7)
 
     @patch("debate.providers.gemini_provider.genai")
     def test_custom_base_url(self, mock_genai: MagicMock) -> None:
@@ -144,7 +148,7 @@ class TestGeminiProviderUsageTracking:
         resp.usage_metadata = None
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 0, "output_tokens": 0}
+        assert_usage_zero(prov)
 
     @patch("debate.providers.gemini_provider.genai")
     def test_usage_metadata_dict_records_tokens(self, mock_genai: MagicMock) -> None:
@@ -155,7 +159,7 @@ class TestGeminiProviderUsageTracking:
         resp.usage_metadata = {"prompt_token_count": 10, "candidates_token_count": 5}
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 10, "output_tokens": 5}
+        assert_usage_recorded(prov, 10, 5)
 
     @patch("debate.providers.gemini_provider.genai")
     def test_usage_metadata_typed_object_records_tokens(self, mock_genai: MagicMock) -> None:
@@ -166,4 +170,4 @@ class TestGeminiProviderUsageTracking:
         resp.usage_metadata = SimpleNamespace(prompt_token_count=20, candidates_token_count=10)
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 20, "output_tokens": 10}
+        assert_usage_recorded(prov, 20, 10)
