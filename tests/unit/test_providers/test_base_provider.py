@@ -8,7 +8,7 @@ from debate.providers.base_provider import LLMProvider
 class DummyProvider(LLMProvider):
     """Concrete subclass for testing abstract base."""
 
-    def _chat(self, messages: list[dict], timeout: float) -> str:
+    def _chat(self, messages, timeout, tools=None, tool_executor=None) -> str:
         return "dummy response"
 
 
@@ -58,7 +58,7 @@ class TestLLMProviderChat:
         received = []
 
         class CaptureProvider(LLMProvider):
-            def _chat(self, msgs: list[dict], timeout: float) -> str:
+            def _chat(self, msgs, timeout, tools=None, tool_executor=None) -> str:
                 received.extend(msgs)
                 return "ok"
 

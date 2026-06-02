@@ -51,6 +51,7 @@ class TestGeminiProviderChat:
         mock_genai.Genai.return_value = mock_client
         mock_response = MagicMock()
         mock_response.candidates[0].content.parts[0].text = "Gemini reply"
+        mock_response.candidates[0].content.parts[0].function_call = None
         mock_client.models.generate_content.return_value = mock_response
 
         prov = _make_provider()
@@ -64,9 +65,60 @@ class TestGeminiProviderChat:
         mock_genai.Genai.return_value = mock_client
         mock_response = MagicMock()
         mock_response.candidates[0].content.parts[0].text = "ok"
+        mock_response.candidates[0].content.parts[0].function_call = None
         mock_client.models.generate_content.return_value = mock_response
 
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "test"}])
         kwargs = mock_client.models.generate_content.call_args.kwargs
         assert kwargs["model"] == "gemini-1.5-flash"
+
+
+class TestGeminiProviderToolCalling:
+    """Test Gemini native tool call loop."""
+
+    @patch("debate.providers.gemini_provider.genai")
+    def test_tool_call_executes_and_continues(self, mock_genai: MagicMock) -> None:
+        """Provider executes tool and makes a second API call with result."""
+        mock_client = MagicMock()
+        mock_genai.Genai.return_value = mock_client
+
+        fc = MagicMock()
+        fc.name = "search"
+        fc.args = {"query": "test"}
+
+        # Access chain first so MagicMock caches and returns the same child mock
+        tool_resp = MagicMock()
+        tool_resp.candidates[0].content.parts[0].function_call = fc
+        tool_resp.candidates[0].content.parts[0].text = None
+
+        final_resp = MagicMock()
+        final_resp.candidates[0].content.parts[0].function_call = None
+        final_resp.candidates[0].content.parts[0].text = "Final answer"
+
+        mock_client.models.generate_content.side_effect = [tool_resp, final_resp]
+
+        prov = _make_provider()
+        executor = MagicMock(return_value="search results")
+        tools = [{"name": "search", "description": "...", "parameters": {
+            "type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]
+        }}]
+        result = prov.chat([{"role": "user", "content": "hi"}], tools, executor)
+
+        assert result == "Final answer"
+        executor.assert_called_once_with("search", {"query": "test"})
+        assert mock_client.models.generate_content.call_count == 2
+
+    @patch("debate.providers.gemini_provider.genai")
+    def test_no_tools_skips_loop(self, mock_genai: MagicMock) -> None:
+        """Without tools, provider returns first response directly."""
+        mock_client = MagicMock()
+        mock_genai.Genai.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.candidates[0].content.parts[0].function_call = None
+        mock_response.candidates[0].content.parts[0].text = "Direct reply"
+        mock_client.models.generate_content.return_value = mock_response
+
+        prov = _make_provider()
+        result = prov.chat([{"role": "user", "content": "hi"}])
+        assert result == "Direct reply"

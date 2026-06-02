@@ -1,11 +1,13 @@
 """OpenAIProvider — OpenAI API implementation of LLMProvider.
 
 Input: model, base_url, temperature, timeout, api_key
-Output: chat(messages) -> str response
-Setup: inherits LLMProvider; uses openai SDK
+Output: chat(messages, tools, tool_executor) -> str response
+Setup: inherits LLMProvider; uses openai SDK; handles tool call loop natively
 """
 
+import json
 import os
+from collections.abc import Callable
 
 from openai import OpenAI
 
@@ -16,8 +18,8 @@ class OpenAIProvider(LLMProvider):
     """
     Input: model (str), base_url (str|None), temperature (float),
            timeout (float), api_key (str|None)
-    Output: chat(messages: list[dict]) -> str
-    Setup: OpenAI SDK client with optional custom base_url
+    Output: chat(messages, tools, tool_executor) -> str
+    Setup: OpenAI SDK client; translates neutral tool defs to OpenAI format
     """
 
     def __init__(
@@ -44,19 +46,61 @@ class OpenAIProvider(LLMProvider):
             timeout=timeout,
         )
 
-    def _chat(self, messages: list[dict], timeout: float) -> str:
-        """Call OpenAI chat completions API.
+    def _chat(
+        self,
+        messages: list[dict],
+        timeout: float,
+        tools: list[dict] | None = None,
+        tool_executor: Callable[[str, dict], str] | None = None,
+    ) -> str:
+        """Call OpenAI chat completions API with optional tool loop.
 
         Args:
             messages: List of {role, content} dicts.
-            timeout: Request timeout (unused, set on client).
+            timeout: Request timeout (set on client at init).
+            tools: Optional neutral tool definitions.
+            tool_executor: Optional callable for tool execution.
 
         Returns:
-            Assistant response text.
+            Final assistant response text.
         """
-        response = self._client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=self.temperature,
-        )
-        return response.choices[0].message.content or ""
+        current_messages = list(messages)
+        openai_tools = [{"type": "function", "function": t} for t in (tools or [])]
+
+        while True:
+            kwargs: dict = {
+                "model": self.model,
+                "messages": current_messages,
+                "temperature": self.temperature,
+            }
+            if openai_tools:
+                kwargs["tools"] = openai_tools
+
+            response = self._client.chat.completions.create(**kwargs)
+            msg = response.choices[0].message
+
+            if response.choices[0].finish_reason != "tool_calls" or not tool_executor:
+                return msg.content or ""
+
+            tool_call = msg.tool_calls[0]
+            args = json.loads(tool_call.function.arguments)
+            result = tool_executor(tool_call.function.name, args)
+
+            current_messages.append({
+                "role": "assistant",
+                "content": msg.content,
+                "tool_calls": [{
+                    "id": tool_call.id,
+                    "type": "function",
+                    "function": {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    },
+                }],
+            })
+            current_messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "name": tool_call.function.name,
+                "content": str(result),
+            })

@@ -50,6 +50,7 @@ class TestAnthropicProviderChat:
         mock_client = MagicMock()
         mock_cls.return_value = mock_client
         mock_msg = MagicMock()
+        mock_msg.stop_reason = "end_turn"
         mock_msg.content[0].text = "Anthropic reply"
         mock_client.messages.create.return_value = mock_msg
 
@@ -63,6 +64,7 @@ class TestAnthropicProviderChat:
         mock_client = MagicMock()
         mock_cls.return_value = mock_client
         mock_msg = MagicMock()
+        mock_msg.stop_reason = "end_turn"
         mock_msg.content[0].text = "ok"
         mock_client.messages.create.return_value = mock_msg
 
@@ -71,3 +73,55 @@ class TestAnthropicProviderChat:
         kwargs = mock_client.messages.create.call_args.kwargs
         assert kwargs["model"] == "claude-3-haiku-20240307"
         assert kwargs["temperature"] == 0.7
+
+
+class TestAnthropicProviderToolCalling:
+    """Test Anthropic native tool call loop."""
+
+    @patch("debate.providers.anthropic_provider.Anthropic")
+    def test_tool_call_executes_and_continues(self, mock_cls: MagicMock) -> None:
+        """Provider executes tool and makes a second API call with result."""
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+
+        tool_block = MagicMock()
+        tool_block.type = "tool_use"
+        tool_block.id = "tu_1"
+        tool_block.name = "search"
+        tool_block.input = {"query": "test"}
+
+        tool_resp = MagicMock()
+        tool_resp.stop_reason = "tool_use"
+        tool_resp.content = [tool_block]
+
+        final_resp = MagicMock()
+        final_resp.stop_reason = "end_turn"
+        final_resp.content[0].text = "Final answer"
+
+        mock_client.messages.create.side_effect = [tool_resp, final_resp]
+
+        prov = _make_provider()
+        executor = MagicMock(return_value="search results")
+        tools = [{"name": "search", "description": "...", "parameters": {
+            "type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]
+        }}]
+        result = prov.chat([{"role": "user", "content": "hi"}], tools, executor)
+
+        assert result == "Final answer"
+        executor.assert_called_once_with("search", {"query": "test"})
+        assert mock_client.messages.create.call_count == 2
+
+    @patch("debate.providers.anthropic_provider.Anthropic")
+    def test_no_tools_skips_loop(self, mock_cls: MagicMock) -> None:
+        """Without tools, provider returns first response directly."""
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_msg = MagicMock()
+        mock_msg.stop_reason = "end_turn"
+        mock_msg.content[0].text = "Direct reply"
+        mock_client.messages.create.return_value = mock_msg
+
+        prov = _make_provider()
+        result = prov.chat([{"role": "user", "content": "hi"}])
+        assert result == "Direct reply"
+        assert mock_client.messages.create.call_count == 1
