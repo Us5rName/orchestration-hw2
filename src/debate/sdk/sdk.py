@@ -1,6 +1,6 @@
 """DebateSDK — single entry point for all debate operations.
 
-Input: config_path (str) — path to setup.json
+Input: config_path (str | Path | None) — path to setup.json; None uses DEFAULT_SETUP_PATH
 Output: run_debate() -> verdict dict, get_logs() -> log lines
 Setup: wires ConfigManager, LogManager, providers, agents, orchestrator
 """
@@ -22,16 +22,17 @@ from .provider_factory import create_provider
 
 class DebateSDK:
     """
-    Input: config_path (str) — path to setup.json
+    Input: config_path (str | Path | None) — path to setup.json; None = project default
     Output: run_debate() -> verdict dict, get_logs() -> list[str]
     Setup: loads config, creates providers, agents, orchestrator
     """
 
-    def __init__(self, config_path: str = "config/setup.json") -> None:
+    def __init__(self, config_path: str | Path | None = None) -> None:
         """Initialize SDK with configuration.
 
         Args:
-            config_path: Path to the JSON config file.
+            config_path: Path to the JSON config file.  None uses DEFAULT_SETUP_PATH.
+                         Relative paths are resolved relative to the project root.
         """
         self.config = ConfigManager(config_path)
         self._skill_registry: SkillRegistry = default_registry()
@@ -129,7 +130,7 @@ class DebateSDK:
         return result
 
     def get_logs(self, count: int = 50) -> list[str]:
-        """Read recent log lines from the latest log file.
+        """Read recent log lines from the current log file.
 
         Args:
             count: Number of recent lines to return.
@@ -137,8 +138,7 @@ class DebateSDK:
         Returns:
             List of log lines.
         """
-        log_dir = Path(self.config.get("logging", {}).get("log_directory", "logs"))
-        log_file = log_dir / "debate.log"
+        log_file = self.logger.log_file
         if not log_file.exists():
             return ["No log file found."]
         lines = log_file.read_text(encoding="utf-8").strip().splitlines()
