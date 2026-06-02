@@ -83,6 +83,23 @@
 - [x] Full debate session test
 - [x] Final checklist review
 
+## Phase 10: Usage & Cost Tracking
+- [x] `UsageRecord` dataclass + `build_from_delta()` factory (`services/usage_record.py`)
+- [x] `_record_usage()` / `_record_unavailable_usage()` accumulator helpers in `base_provider.py`
+- [x] Match/case usage extraction for OpenAI, Anthropic, Gemini (dict + typed-object + None branches)
+- [x] `CostCalculator` — pure math module: `cost_for_record`, `summarize_round`, `summarize_debate`
+- [x] Pricing config in `config/setup.json` — per-role input/output rates, per_1m_tokens unit
+- [x] `validate_pricing()` in `config_validator.py` — catches missing/invalid pricing at startup
+- [x] `orchestrator_logging.py` — `log_round_cost` and `log_debate_cost` helpers
+- [x] `DebateOrchestrator` — delta-snapshot per agent turn, per-round cost log, debate cost summary
+- [x] `DebateSDK` — propagates `pricing` config to orchestrator
+- [x] Tests: `test_usage_record.py`, `test_cost_calculator.py` (new)
+- [x] Tests: usage branch coverage for all 3 provider test files
+- [x] Tests: pricing validation tests in `test_config_validator.py`
+- [x] Tests: cost_summary assertions in `test_orchestrator.py`
+- [x] 230 tests passing · 99% coverage · 0 Ruff violations
+- [x] README updated with automatic cost tracking documentation
+
 ## Definition of Done
 
 | Phase | Criteria |

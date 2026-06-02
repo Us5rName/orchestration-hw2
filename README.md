@@ -184,6 +184,28 @@ Skills are modular classes implementing `AgentSkill`. They inject instruction te
 
 ## Token Cost Analysis
 
+### Automatic Per-Round Tracking
+
+Every debate automatically logs token usage and cost per turn. Tokens are captured via a **delta-snapshot** pattern: the provider's cumulative counter is read before and after each agent call, and the difference is attributed to that specific turn. This handles multi-step tool-call loops correctly.
+
+The `run()` result includes a `cost_summary` dict:
+
+```json
+{
+  "total_tokens": 6635,
+  "total_cost_usd": 0.000994,
+  "by_role": {
+    "pro":   {"input_tokens": 1096, "output_tokens": 511,  "cost_usd": 0.000471},
+    "con":   {"input_tokens": 1865, "output_tokens": 1227, "cost_usd": 0.001015},
+    "judge": {"input_tokens": 1770, "output_tokens": 166,  "cost_usd": 0.000365}
+  }
+}
+```
+
+Pricing rates are configured in `config/setup.json` under the `"pricing"` key (per_1m_tokens, separate input/output rates per role).
+
+### Live Run Results
+
 Live run on `openai/gpt-oss-20b:free` (OpenRouter), 1 round, topic: Real Madrid vs Barcelona.
 
 ### Actual Token Usage (1 round, 2026-06-02)
@@ -227,7 +249,7 @@ Estimated totals: **~22,800 input / ~9,100 output tokens**.
 ## Tests & Quality
 
 ```
-193 passed  ·  97.82% coverage  ·  0 Ruff violations
+230 passed  ·  99% coverage  ·  0 Ruff violations
 ```
 
 Run tests:
