@@ -1,11 +1,17 @@
 """Tests for config_validator module."""
 
 import json
-import sys
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
+
+from debate.shared.config_validator import (
+    ConfigValidationError,
+    validate_agent_skills,
+    validate_all_configs,
+    validate_config_version,
+    validate_pricing,
+)
 
 
 class TestValidateConfigVersion:
@@ -15,45 +21,33 @@ class TestValidateConfigVersion:
         """Valid version does not raise."""
         config_file = tmp_path / "config.json"
         config_file.write_text(json.dumps({"version": "1.00"}))
-        # Should not raise
-        from debate.shared.config_validator import validate_config_version
-
-        validate_config_version(str(config_file))
+        validate_config_version(str(config_file))  # must not raise
 
     def test_missing_version_raises(self, tmp_path: Path) -> None:
-        """Missing version key triggers sys.exit."""
+        """Missing version key raises ConfigValidationError."""
         config_file = tmp_path / "config.json"
         config_file.write_text(json.dumps({"other": "data"}))
-        with patch.object(sys, "exit") as mock_exit:
-            from debate.shared.config_validator import validate_config_version
-
+        with pytest.raises(ConfigValidationError, match="version"):
             validate_config_version(str(config_file))
-            assert mock_exit.call_count >= 1
 
     def test_version_mismatch_raises(self, tmp_path: Path) -> None:
-        """Version mismatch raises SystemExit."""
+        """Version mismatch raises ConfigValidationError."""
         config_file = tmp_path / "config.json"
         config_file.write_text(json.dumps({"version": "0.99"}))
-        with patch.object(sys, "exit"):
-            from debate.shared.config_validator import validate_config_version
-
+        with pytest.raises(ConfigValidationError, match="mismatch"):
             validate_config_version(str(config_file))
-            sys.exit.assert_called_once()
 
     def test_missing_file_raises(self) -> None:
-        """Missing file triggers sys.exit."""
-        with patch.object(sys, "exit", side_effect=SystemExit(1)):
-            from debate.shared.config_validator import validate_config_version
-
-            with pytest.raises(SystemExit):
-                validate_config_version("nonexistent.json")
+        """Missing file raises ConfigValidationError."""
+        with pytest.raises(ConfigValidationError, match="not found"):
+            validate_config_version(str(Path("/nonexistent/path/config.json")))
 
 
 class TestValidateAllConfigs:
     """Test validating all configs."""
 
-    def test_validates_all_files(self, tmp_path: Path) -> None:
-        """All config files are validated."""
+    def _write_valid_files(self, tmp_path: Path) -> tuple[Path, Path, Path]:
+        """Write minimal valid config files to tmp_path."""
         pricing = {
             "unit": "per_1m_tokens",
             "judge": {"input": 0.15, "output": 0.60},
@@ -66,80 +60,72 @@ class TestValidateAllConfigs:
         logging_cfg.write_text(json.dumps({"version": "1.00"}))
         rate = tmp_path / "rate.json"
         rate.write_text(json.dumps({"rate_limits": {"version": "1.00"}}))
-        from debate.shared.config_validator import validate_all_configs
+        return setup, rate, logging_cfg
 
+    def test_validates_all_files(self, tmp_path: Path) -> None:
+        """All valid config files pass without raising."""
+        setup, rate, logging_cfg = self._write_valid_files(tmp_path)
         validate_all_configs(str(setup), str(rate), str(logging_cfg))
 
-    def test_rate_limits_version_mismatch_exits(self, tmp_path: Path) -> None:
-        """Nested rate_limits version mismatch triggers sys.exit."""
-        pricing = {
-            "unit": "per_1m_tokens",
-            "judge": {"input": 0.15, "output": 0.60},
-            "pro": {"input": 0.15, "output": 0.60},
-            "con": {"input": 0.15, "output": 0.60},
-        }
+    def test_works_from_any_cwd(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        """validate_all_configs works regardless of current working directory."""
+        monkeypatch.chdir(tmp_path)
+        validate_all_configs()  # Uses real project config — must not raise
+
+    def test_rate_limits_version_mismatch_raises(self, tmp_path: Path) -> None:
+        """Nested rate_limits version mismatch raises ConfigValidationError."""
+        pricing = {"unit": "per_1m_tokens",
+                   "judge": {"input": 0.15, "output": 0.60},
+                   "pro": {"input": 0.15, "output": 0.60},
+                   "con": {"input": 0.15, "output": 0.60}}
         setup = tmp_path / "setup.json"
         setup.write_text(json.dumps({"version": "1.00", "pricing": pricing}))
         logging_cfg = tmp_path / "logging.json"
         logging_cfg.write_text(json.dumps({"version": "1.00"}))
         rate = tmp_path / "rate.json"
         rate.write_text(json.dumps({"rate_limits": {"version": "0.00"}}))
-        with patch.object(sys, "exit", side_effect=SystemExit(1)):
-            from debate.shared.config_validator import validate_all_configs
+        with pytest.raises(ConfigValidationError, match="mismatch"):
+            validate_all_configs(str(setup), str(rate), str(logging_cfg))
 
-            with pytest.raises(SystemExit):
-                validate_all_configs(str(setup), str(rate), str(logging_cfg))
-
-    def test_pricing_error_triggers_exit(self, tmp_path: Path) -> None:
-        """Invalid pricing in setup.json triggers sys.exit."""
+    def test_pricing_error_raises(self, tmp_path: Path) -> None:
+        """Missing pricing in setup.json raises ConfigValidationError."""
         setup = tmp_path / "setup.json"
-        setup.write_text(json.dumps({"version": "1.00"}))  # no pricing
+        setup.write_text(json.dumps({"version": "1.00"}))
         logging_cfg = tmp_path / "logging.json"
         logging_cfg.write_text(json.dumps({"version": "1.00"}))
         rate = tmp_path / "rate.json"
         rate.write_text(json.dumps({"rate_limits": {"version": "1.00"}}))
-        with patch.object(sys, "exit", side_effect=SystemExit(1)):
-            from debate.shared.config_validator import validate_all_configs
-
-            with pytest.raises(SystemExit):
-                validate_all_configs(str(setup), str(rate), str(logging_cfg))
+        with pytest.raises(ConfigValidationError, match="pricing"):
+            validate_all_configs(str(setup), str(rate), str(logging_cfg))
 
 
 class TestValidatePricing:
     """Test validate_pricing error cases."""
 
     def test_missing_pricing_section_raises(self) -> None:
-        """No pricing key raises ValueError."""
-        from debate.shared.config_validator import validate_pricing
-
-        with pytest.raises(ValueError, match="Missing 'pricing'"):
+        """No pricing key raises ConfigValidationError."""
+        with pytest.raises(ConfigValidationError, match="Missing 'pricing'"):
             validate_pricing({})
 
     def test_invalid_unit_raises(self) -> None:
-        """Unknown pricing unit raises ValueError."""
-        from debate.shared.config_validator import validate_pricing
-
-        with pytest.raises(ValueError, match="Invalid pricing unit"):
+        """Unknown pricing unit raises ConfigValidationError."""
+        with pytest.raises(ConfigValidationError, match="Invalid pricing unit"):
             validate_pricing({"pricing": {"unit": "per_token"}})
 
     def test_missing_role_raises(self) -> None:
-        """Missing role entry raises ValueError."""
-        from debate.shared.config_validator import validate_pricing
-
-        with pytest.raises(ValueError, match="Missing pricing for role"):
+        """Missing role entry raises ConfigValidationError."""
+        with pytest.raises(ConfigValidationError, match="Missing pricing for role"):
             validate_pricing({"pricing": {"unit": "per_1m_tokens"}})
 
     def test_invalid_pricing_value_raises(self) -> None:
-        """Non-numeric pricing value raises ValueError."""
-        from debate.shared.config_validator import validate_pricing
-
+        """Non-numeric pricing value raises ConfigValidationError."""
         pricing = {
             "unit": "per_1m_tokens",
             "judge": {"input": "free", "output": 0.60},
             "pro": {"input": 0.15, "output": 0.60},
             "con": {"input": 0.15, "output": 0.60},
         }
-        with pytest.raises(ValueError, match="Invalid pricing"):
+        with pytest.raises(ConfigValidationError, match="Invalid pricing"):
             validate_pricing({"pricing": pricing})
 
 
@@ -147,17 +133,18 @@ class TestValidateAgentSkills:
     """Test validate_agent_skills error cases."""
 
     def test_judge_with_debater_skill_raises(self) -> None:
-        """Judge assigned a debater skill raises ValueError."""
-        from debate.shared.config_validator import validate_agent_skills
-
+        """Judge assigned a debater skill raises ConfigValidationError."""
         cfg = {"agents": {"judge": {"skills": ["research-analysis"]}}}
-        with pytest.raises(ValueError, match="Judge cannot use debater skills"):
+        with pytest.raises(ConfigValidationError, match="Judge cannot use debater skills"):
             validate_agent_skills(cfg)
 
     def test_pro_with_judge_skill_raises(self) -> None:
-        """Pro agent assigned a judge skill raises ValueError."""
-        from debate.shared.config_validator import validate_agent_skills
-
+        """Pro agent assigned a judge skill raises ConfigValidationError."""
         cfg = {"agents": {"pro": {"skills": ["persuasion-scoring"]}}}
-        with pytest.raises(ValueError, match="cannot use judge skills"):
+        with pytest.raises(ConfigValidationError, match="cannot use judge skills"):
             validate_agent_skills(cfg)
+
+    def test_config_validation_error_is_runtime_error(self) -> None:
+        """ConfigValidationError is a RuntimeError."""
+        exc = ConfigValidationError("bad config")
+        assert isinstance(exc, RuntimeError)
