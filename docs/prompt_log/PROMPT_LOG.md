@@ -318,6 +318,45 @@
 
 ---
 
+### Prompt 13: Runtime Bug Fixes and Skill/Tool Logging
+**User**: "this is the input + output I got. remember the skills you have with the instructions and fix the problem. add the relevant test, and commit in small readable commits" (traceback showed TypeError, RuntimeWarning, ResourceWarning)
+
+**Context**: First real end-to-end run of the debate. Three runtime issues surfaced: (1) crash in orchestrator logging when LLM returned references as dicts instead of strings; (2) unclosed file handle in logger line-count check; (3) duckduckgo_search package renamed to ddgs.
+
+**Skills Applied**: tdd-testing, version-control, modular-design
+
+**Output**:
+- `orchestrator_logging.py`: coerce non-string references with `str(r)` before `join()`; 10-test suite added (`test_orchestrator_logging.py`) covering str, dict, mixed, and None-logger cases
+- `logger.py`: wrapped `_current_file.open()` in `with` statement to close handle after line count
+- `search_service.py` + `pyproject.toml`: migrated `from duckduckgo_search import DDGS` → `from ddgs import DDGS`; removed `duckduckgo-search` from dependencies
+- Added skill/tool logging to `AgentBase`: logs active skill names at `think()` entry, tool name + query and result count at each `_execute_tool()` dispatch
+- `logger` param threaded through `JudgeAgent`, `ProAgent`, `ConAgent`, `AgentFactory`, `DebateSDK`
+- 6 new `TestAgentLogging` tests; 190 total tests, all passing; 0 Ruff violations
+
+**Key Design**:
+- Agent-level log entries (`PRO skills active: ...`, `PRO tool call: search(...)`, `PRO tool result: 3 item(s)`) flow through the same LogManager as orchestrator-level entries
+- Logger is optional everywhere — no-op when None, no defensive branching in callers
+
+**Lessons**:
+- Always run end-to-end before marking a phase complete — unit tests catch logic bugs, runtime reveals integration gaps
+- `wc -l` counts blanks and comments; use `grep -cE '^\s*[^#\s]'` for the true code-line count against the 150-line rule
+- When migrating packages, verify the new package's API (context manager, method signatures) before updating the import
+
+---
+
+### Prompt 14: File Size Audit
+**User**: "check if there are any code files longer than 150 lines and if there are semantically split them"
+
+**Context**: Routine hygiene check after adding new code across multiple files.
+
+**Output**: All files within limit. Largest: `base_agent.py` at 124 code lines / 148 total. No splits needed.
+
+**Lessons**:
+- Distinguish total lines (`wc -l`) from code lines (non-blank, non-comment) — the rule targets code lines
+- Small, focused commits make the line-count check a non-issue; files rarely bloat when concerns are split at commit time
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
