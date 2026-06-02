@@ -1,0 +1,246 @@
+# AI Debate System
+
+Multi-agent AI debate system where two LLM-powered agents argue opposing sides of a topic
+under the supervision of a Judge agent. Built for the AI Orchestration course — Dr. Sagol.
+
+## How It Works
+
+```
+User → TerminalMenu → DebateSDK → DebateOrchestrator
+                                        │
+                         ┌──────────────┼──────────────┐
+                         ▼              ▼              ▼
+                     ProAgent       ConAgent       JudgeAgent
+                         │              │              │
+                    (research)    (research +     (persuasion-
+                                  quality-std)    scoring)
+                         │              │
+                    SearchService  SearchService
+                         │
+                    ApiGatekeeper → LLMProvider (OpenAI / Anthropic / Gemini)
+```
+
+- **Pro** argues one side using live web search for citations.
+- **Con** argues the other side, cross-checking evidence and challenging methodology.
+- **Judge** scores persuasiveness (no ties), then declares a winner.
+- All external API calls flow through the **ApiGatekeeper** (rate limiting, retries, queue).
+
+## Quick Start
+
+```bash
+git clone <repo>
+cd orchestration-hw2
+
+# Install dependencies
+uv sync
+
+# Copy and fill in API keys
+cp .env-example .env
+# Edit .env — add at least one provider key
+
+# Run
+uv run python src/main.py
+```
+
+### Minimal `.env`
+
+```dotenv
+OPENAI_API_KEY=sk-...
+```
+
+## Configuration
+
+All tuneable values live in `config/setup.json` — no hardcoded values in code.
+
+```json
+{
+  "debate": {
+    "topic": "Real Madrid vs Barcelona - which is better?",
+    "max_rounds": 5,
+    "max_tokens_per_agent": 50000,
+    "request_timeout_seconds": 600
+  },
+  "agents": {
+    "judge":  { "provider": "openai", "model": "gpt-4o-mini", "temperature": 0.3, "skills": ["persuasion-scoring"] },
+    "pro":    { "provider": "openai", "model": "gpt-4o-mini", "temperature": 0.7, "skills": ["research-analysis"] },
+    "con":    { "provider": "openai", "model": "gpt-4o-mini", "temperature": 0.7, "skills": ["research-analysis", "quality-standards"] }
+  },
+  "gatekeeper": {
+    "requests_per_minute": 30,
+    "requests_per_hour": 500,
+    "max_retries": 3,
+    "retry_delay_seconds": 5
+  }
+}
+```
+
+**Budget tip**: reduce `max_rounds` from 10 → 3 to cut costs by ~70% while still getting a verdict.
+
+### Supported Providers
+
+| Provider  | `"provider"` value | Key env var            |
+|-----------|--------------------|------------------------|
+| OpenAI    | `"openai"`         | `OPENAI_API_KEY`       |
+| Anthropic | `"anthropic"`      | `ANTHROPIC_API_KEY`    |
+| Gemini    | `"gemini"`         | `GOOGLE_GENAI_API_KEY` |
+| Any OpenAI-compatible | `"openai"` + `"base_url"` | — |
+
+Set `"base_url"` in the agent config to point at OpenRouter, Ollama, or any other OpenAI-compatible endpoint.
+
+## Terminal Interface
+
+```
+AI Debate System v1.00
+
+1. Start Debate
+2. View Logs
+3. Configuration
+4. Exit
+
+Select option: _
+```
+
+### Start Debate output
+
+```
+Starting debate...
+
+Winner: pro
+Pro Score: 78
+Con Score: 72
+Justification: The pro side presented a clear, well-structured argument with concrete
+statistics and logical sequencing, making it easy to follow and compelling. While the
+con side offered nuanced context and counter-points, its arguments were less tightly
+organized, reducing overall persuasiveness.
+```
+
+## Full Debate Transcript
+
+Topic: **Real Madrid vs Barcelona — which is better?** (1-round demo)
+
+---
+
+**PRO** *(research-analysis skill, 1 search call → 5 results)*
+
+> Real Madrid is unequivocally the superior club when measured by historical achievement,
+> global impact, and consistent excellence.
+>
+> 1. **Record European Success** — 15 UEFA Champions League titles vs Barcelona's 5.
+> 2. **Domestic Supremacy** — 35 La Liga titles vs 27.
+> 3. **Overall Trophy Haul** — 100+ major trophies vs ~95.
+> 4. **Global Brand** — #1 Deloitte Football Money League 2023, #1 Forbes most valuable clubs.
+> 5. **Player Legacy** — Di Stéfano, Puskás, Raúl, Ronaldo, Modrić.
+>
+> *References*: soccermag.com, livesoccertv.com, statista.com, deloitte.com, forbes.com
+
+---
+
+**CON** *(research-analysis + quality-standards skills, 2 search calls → 10 results)*
+
+> While the pro side touts raw trophy counts, those numbers hide crucial context.
+>
+> 1. **European gap is historical** — Barcelona's 5 titles are all post-2006 (modern era); Real's extra 10 include 12 pre-1998 wins when competition was far weaker.
+> 2. **Recent domestic dominance flips** — Barcelona won 10 La Liga titles 2005–2023 vs Real's 5.
+> 3. **Trophy inflation** — Real's "100+" includes extinct regional competitions; Barcelona's 95 are higher-proportion modern honours.
+> 4. **Financial gap is closing** — €30M revenue gap in 2022-23; Barcelona's fiscal reforms show long-term stability.
+> 5. **La Masia vs Galáctico model** — Messi, Xavi, Iniesta, Busquets shaped modern football; Real buys stars rather than developing them.
+>
+> *References*: wikipedia.org, laliga.com, deloitte.com, uefa.com
+
+---
+
+**JUDGE** *(persuasion-scoring skill)*
+
+> **Winner: PRO** — Pro 78 / Con 72
+>
+> The pro side presented a clear, well-structured argument with concrete statistics and
+> logical sequencing. The con side offered nuanced counter-points but was less tightly
+> organised, reducing persuasiveness.
+
+---
+
+## Agent Skills (Plugin System)
+
+Skills are modular classes implementing `AgentSkill`. They inject instruction text and
+(optionally) a native LLM tool call into agents at runtime.
+
+| Skill | Agents | What it does |
+|-------|--------|--------------|
+| `research-analysis` | Pro, Con | Live web search; injects evidence-based reasoning instructions + search tool |
+| `quality-standards` | Con | Critical evaluation; identifies fallacies and methodology weaknesses |
+| `persuasion-scoring` | Judge | Scores arguments on persuasiveness 0–100; enforces no-tie rule |
+
+### Adding a New Skill
+
+1. Create `src/debate/skills/my_skill.py` implementing `AgentSkill`.
+2. Register it in `skills/registry.py → default_registry()`.
+3. Add the skill name to the relevant agent's `"skills"` list in `config/setup.json`.
+
+### Adding a New LLM Provider
+
+1. Create `src/debate/providers/my_provider.py` implementing `ILLMProvider.chat()`.
+2. Register it in `sdk/provider_factory.py`.
+3. Set `"provider": "my-provider"` in agent config.
+
+## Tests & Quality
+
+```
+193 passed  ·  97.82% coverage  ·  0 Ruff violations
+```
+
+Run tests:
+
+```bash
+uv run --with pytest --with pytest-cov pytest --cov=src
+```
+
+Run linter:
+
+```bash
+uv run --with ruff ruff check .
+```
+
+## Project Layout
+
+```
+orchestration-hw2/
+├── src/
+│   ├── main.py                   # Entry point
+│   └── debate/
+│       ├── agents/               # ProAgent, ConAgent, JudgeAgent, AgentBase
+│       ├── cli/                  # TerminalMenu
+│       ├── providers/            # OpenAI, Anthropic, Gemini + ILLMProvider
+│       ├── sdk/                  # DebateSDK, ProviderFactory, AgentFactory
+│       ├── services/             # Orchestrator, DebateState, PromptBuilder, Verdict
+│       ├── shared/               # ConfigManager, LogManager, ApiGatekeeper, Watchdog
+│       └── skills/               # AgentSkill ABC + 3 concrete skills + SkillRegistry
+├── tests/
+│   ├── unit/                     # Module-level unit tests
+│   └── integration/              # End-to-end debate flow
+├── config/
+│   ├── setup.json                # Main config (topic, models, rounds, rate limits)
+│   ├── rate_limits.json          # Gatekeeper rate-limit profiles
+│   └── logging_config.json       # Log rotation settings
+├── docs/
+│   ├── PRD.md                    # Product requirements
+│   ├── PLAN.md                   # Architecture (C4, class hierarchy)
+│   ├── TODO.md                   # Phase tracker
+│   ├── PRD_agent_skills.md       # Skills plugin design
+│   ├── PRD_debate_orchestration.md
+│   ├── PRD_sdk.md
+│   └── prompt_log/PROMPT_LOG.md  # AI-assisted development log
+├── logs/                         # FIFO-rotated debate transcripts
+├── pyproject.toml
+├── uv.lock
+└── .env-example
+```
+
+## Architecture Decisions
+
+| ADR | Decision | Rationale |
+|-----|----------|-----------|
+| ADR-001 | Interface-based LLM provider abstraction | Provider-agnostic requirement |
+| ADR-002 | JSON inter-agent communication | Structured, monitorable, token-efficient |
+| ADR-003 | Judge as mediator — all messages flow through Judge | Homework requirement |
+| ADR-004 | DuckDuckGo search (no API key) | Free, sufficient for citations |
+| ADR-005 | Class-based Agent Skills plugin system | Configurable, composable, independently testable |
