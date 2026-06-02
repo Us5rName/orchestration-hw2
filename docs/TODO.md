@@ -56,26 +56,26 @@
 - [x] Verify ≥85% coverage (96% achieved)
 
 ## Phase 8: Agent Skills
-- [ ] Create `docs/PRD_agent_skills.md` ✓ (done in planning)
-- [ ] `AgentSkill` abstract base class (`src/debate/skills/base_skill.py`)
-- [ ] `ResearchAnalysisSkill` — evidence, data, citations; wraps `SearchService` for live search (`skills/research_analysis.py`)
-- [ ] `QualityStandardsSkill` — fallacies, methodology, rigor (`skills/quality_standards.py`)
-- [ ] `PersuasionScoringSkill` — persuasiveness scoring, no ties (`skills/persuasion_scoring.py`)
-- [ ] `SkillRegistry` + `default_registry()` factory (`skills/registry.py`)
-- [ ] `skills/__init__.py` — export public API
-- [ ] Update `config/setup.json` — add `"skills": [...]` list per agent
-- [ ] Update `ConfigValidator` — validate `skills` list per agent config
-- [ ] Update `AgentBase` — accept `skills: list[AgentSkill]`; add `_build_skill_block()` and `search(query)`
-- [ ] Update `JudgeAgent`, `ProAgent`, `ConAgent` — call `_build_skill_block()` in system prompt
-- [ ] Update `DebateSDK` — resolve skills from registry and inject into agents
-- [ ] Unit tests: `test_skills/test_base_skill.py`
-- [ ] Unit tests: `test_skills/test_skills.py` (all 3 concrete skills)
-- [ ] Unit tests: `test_skills/test_registry.py`
-- [ ] Update `test_agents/test_base_agent.py` — test skill composition
-- [ ] Update `test_sdk/test_sdk.py` — test skill wiring through SDK
-- [ ] Update `test_shared/test_config_validator.py` — test skills key validation and role-skill compatibility
-- [ ] Verify ≥85% coverage maintained
-- [ ] 0 Ruff violations
+- [x] Create `docs/PRD_agent_skills.md`
+- [x] `AgentSkill` abstract base class (`src/debate/skills/base_skill.py`)
+- [x] `ResearchAnalysisSkill` — evidence, data, citations; wraps `SearchService` for live search (`skills/research_analysis.py`)
+- [x] `QualityStandardsSkill` — fallacies, methodology, rigor (`skills/quality_standards.py`)
+- [x] `PersuasionScoringSkill` — persuasiveness scoring, no ties (`skills/persuasion_scoring.py`)
+- [x] `SkillRegistry` + `default_registry()` factory (`skills/registry.py`)
+- [x] `skills/__init__.py` — export public API
+- [x] Update `config/setup.json` — add `"skills": [...]` list per agent
+- [x] Update `ConfigValidator` — validate `skills` list per agent config
+- [x] Update `AgentBase` — accept `skills: list[AgentSkill]`; add `_build_skill_block()` and tool executor
+- [x] Update `JudgeAgent`, `ProAgent`, `ConAgent` — call `_build_skill_block()` in system prompt
+- [x] Update `DebateSDK` — resolve skills from registry and inject into agents
+- [x] Unit tests: `test_skills/test_base_skill.py`
+- [x] Unit tests: `test_skills/test_skills.py` (all 3 concrete skills)
+- [x] Unit tests: `test_skills/test_registry.py`
+- [x] Update `test_agents/test_base_agent.py` — test skill composition
+- [x] Update `test_sdk/test_sdk.py` — test skill wiring through SDK
+- [x] Update `test_shared/test_config_validator.py` — test skills key validation and role-skill compatibility
+- [x] Verify ≥85% coverage maintained (174 tests, all passing)
+- [x] 0 Ruff violations
 
 ## Phase 9: Documentation & Polish
 - [ ] README.md with screenshots

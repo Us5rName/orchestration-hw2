@@ -284,6 +284,40 @@
 
 ---
 
+---
+
+### Prompt 12: Agent Skills — Modular Plugin Architecture
+**User**: "update the relevant docs, implement and commit. remember to use your relevant skills from the project when doing things. commit in a new branch, using the templates of the other branches. commits should be small and readable"
+
+**Context**: Agents had hardcoded skill text in `_build_system_prompt()`. Skills were not configurable, composable, or independently testable. User had clarified: research skill needs live internet search via existing SearchService; persuasion-scoring is judge-only; research-analysis and quality-standards are debater-only.
+
+**Skills Applied**: modular-design, sdk-architecture, tdd-testing, version-control, code-review-config
+
+**Output**:
+- `AgentSkill` ABC: `name`, `get_instructions()`, `get_tool_definition()`, `search()`
+- Three concrete skills: `ResearchAnalysisSkill` (with native tool call + SearchService), `QualityStandardsSkill`, `PersuasionScoringSkill`
+- `SkillRegistry` plugin pattern with `default_registry()` factory; lazy import breaks circular dep
+- All three providers (OpenAI, Anthropic, Gemini) updated to handle native tool calling loop internally
+- `AgentBase` composes skills: `_build_skill_block()`, `_get_tools()`, `_execute_tool()`
+- `AgentFactory` mirrors ProviderFactory pattern; SDK delegates to it
+- `ConfigValidator` enforces role-skill semantics at startup (raises on cross-role assignment)
+- `config/setup.json` — skills arrays per agent
+- 25 new skill tests + provider tool-call tests + agent skill tests + SDK wiring tests
+- 174 total tests, all passing; 0 Ruff violations; coverage maintained
+
+**Key Design**:
+- Native LLM tool calling (function calling) — providers handle the call loop internally, keeping AgentBase clean
+- `chat(messages, tools=None, tool_executor=None)` — provider-agnostic interface; each provider translates to its own format
+- Circular import resolved: `TYPE_CHECKING` guard in `research_analysis.py` + lazy import in `default_registry()`
+- Role-skill validation at startup prevents misconfiguration silently passing through
+
+**Lessons**:
+- `mock[0] = x` does NOT make `mock[0]` return `x` in MagicMock — access the chain to get the cached child mock, then set attributes
+- Plugin registries with lazy imports are the cleanest way to break circular deps while keeping the public API clean
+- Validate config semantics (role-skill compatibility) at startup, not at runtime
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
