@@ -1,96 +1,56 @@
-"""Integration test for full debate flow."""
+"""Integration test for full debate flow.
 
-from unittest.mock import MagicMock
-
-import pytest
+Uses ScriptedAgent so the integration layer tests orchestration wiring
+(DebateOrchestrator + DebateState + verdict pipeline) without making
+real LLM calls.  Vendor-specific provider behaviour is tested in the
+unit/test_providers/ suite.
+"""
 
 from debate.services.orchestrator import DebateOrchestrator
+from tests.fakes.agents import ScriptedAgent
+
+PRO_RESPONSE = {"content": "Pro argues with evidence", "references": ["http://example.com"]}
+CON_RESPONSE = {"content": "Con challenges methodology", "references": []}
+JUDGE_RESPONSE = {
+    "winner": "pro",
+    "pro_score": 80,
+    "con_score": 70,
+    "justification": "Pro presented stronger evidence",
+}
 
 
-@pytest.fixture
-def mock_judge() -> MagicMock:
-    """Return a mock JudgeAgent."""
-    judge = MagicMock()
-    judge.role = "judge"
-    judge.think.return_value = {
-        "winner": "pro",
-        "pro_score": 80,
-        "con_score": 70,
-        "justification": "Pro presented stronger evidence",
-    }
-    return judge
-
-
-@pytest.fixture
-def mock_pro() -> MagicMock:
-    """Return a mock ProAgent."""
-    pro = MagicMock()
-    pro.role = "pro"
-    pro.think.return_value = {
-        "content": "Pro argues with evidence",
-        "references": ["http://example.com"],
-    }
-    return pro
-
-
-@pytest.fixture
-def mock_con() -> MagicMock:
-    """Return a mock ConAgent."""
-    con = MagicMock()
-    con.role = "con"
-    con.think.return_value = {"content": "Con challenges methodology", "references": []}
-    return con
+def _make_orchestrator(max_rounds: int = 3) -> DebateOrchestrator:
+    return DebateOrchestrator(
+        judge_agent=ScriptedAgent("judge", [JUDGE_RESPONSE] * 10),
+        pro_agent=ScriptedAgent("pro", [PRO_RESPONSE] * 10),
+        con_agent=ScriptedAgent("con", [CON_RESPONSE] * 10),
+        topic="AI is beneficial",
+        max_rounds=max_rounds,
+    )
 
 
 class TestFullDebateFlow:
-    """Integration test for complete debate flow."""
+    """Integration tests for the complete debate pipeline."""
 
-    def test_full_debate_completes(
-        self, mock_judge: MagicMock, mock_pro: MagicMock, mock_con: MagicMock
-    ) -> None:
+    def test_full_debate_completes(self) -> None:
         """Full debate runs all rounds and produces verdict."""
-        orchestrator = DebateOrchestrator(
-            judge_agent=mock_judge,
-            pro_agent=mock_pro,
-            con_agent=mock_con,
-            topic="AI is beneficial",
-            max_rounds=3,
-        )
-        result = orchestrator.run()
-
+        result = _make_orchestrator(3).run()
         assert result["winner"] == "pro"
         assert result["pro_score"] == 80
         assert result["con_score"] == 70
-        assert len(result["history"]) == 6  # 2 args * 3 rounds
+        assert len(result["history"]) == 6  # 2 args × 3 rounds
 
-    def test_history_contains_all_arguments(
-        self, mock_judge: MagicMock, mock_pro: MagicMock, mock_con: MagicMock
-    ) -> None:
-        """Debate history contains all arguments from both sides."""
-        orchestrator = DebateOrchestrator(
-            judge_agent=mock_judge,
-            pro_agent=mock_pro,
-            con_agent=mock_con,
-            topic="AI is beneficial",
-            max_rounds=2,
-        )
-        orchestrator.run()
-
-        pro_args = [h for h in orchestrator.state.history if h["agent"] == "pro"]
-        con_args = [h for h in orchestrator.state.history if h["agent"] == "con"]
+    def test_history_contains_all_arguments(self) -> None:
+        """Debate history records arguments from both sides for every round."""
+        orc = _make_orchestrator(2)
+        orc.run()
+        pro_args = [h for h in orc.state.history if h["agent"] == "pro"]
+        con_args = [h for h in orc.state.history if h["agent"] == "con"]
         assert len(pro_args) == 2
         assert len(con_args) == 2
 
-    def test_state_is_complete_after_run(
-        self, mock_judge: MagicMock, mock_pro: MagicMock, mock_con: MagicMock
-    ) -> None:
-        """DebateState is marked complete after run."""
-        orchestrator = DebateOrchestrator(
-            judge_agent=mock_judge,
-            pro_agent=mock_pro,
-            con_agent=mock_con,
-            topic="AI is beneficial",
-            max_rounds=2,
-        )
-        orchestrator.run()
-        assert orchestrator.state.is_complete is True
+    def test_state_is_complete_after_run(self) -> None:
+        """DebateState is marked complete after run()."""
+        orc = _make_orchestrator(2)
+        orc.run()
+        assert orc.state.is_complete is True

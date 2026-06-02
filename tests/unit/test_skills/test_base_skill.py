@@ -1,6 +1,6 @@
 """Tests for AgentSkill abstract base class."""
 
-import pytest
+import inspect
 
 from debate.skills.base_skill import AgentSkill
 
@@ -19,10 +19,14 @@ class ConcreteSkill(AgentSkill):
 class TestAgentSkillABC:
     """Test that AgentSkill enforces its interface."""
 
-    def test_cannot_instantiate_directly(self) -> None:
-        """AgentSkill cannot be instantiated — abstract methods required."""
-        with pytest.raises(TypeError):
-            AgentSkill()  # type: ignore[abstract]
+    def test_is_abstract(self) -> None:
+        """AgentSkill is an abstract class."""
+        assert inspect.isabstract(AgentSkill)
+
+    def test_abstract_methods(self) -> None:
+        """AgentSkill declares name and get_instructions as abstract."""
+        assert "name" in AgentSkill.__abstractmethods__
+        assert "get_instructions" in AgentSkill.__abstractmethods__
 
     def test_concrete_subclass_instantiates(self) -> None:
         """Concrete subclass instantiates without error."""

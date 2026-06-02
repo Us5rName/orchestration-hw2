@@ -480,6 +480,40 @@ changes accumulate.
 
 ---
 
+### Prompt 1 (Phase 11 / Branch 1) — Test Harness Refactor (2026-06-03)
+**User**: Refactor the test suite before refactoring production architecture.
+
+**Branch**: `test/refactor-harness-and-duplicates`
+
+**Inventory findings**:
+- `test_base_agent.py` was the only file over the 150-line code limit (157 lines)
+- All 3 provider test files had identical Init/Chat/Tool/Usage test class patterns (structural duplication)
+- `test_base_provider.py` and `test_base_skill.py` used `type: ignore[abstract]` to force-instantiate abstract classes
+- `test_orchestrator.py` and `test_debate_flow.py` used bare `MagicMock()` for agents — too permissive for architecture verification
+- No tests for child-isolation, tie prevention, or invalid output rejection
+
+**Changes**:
+- `tests/fakes/` — `FakeProvider` (scripted LLM responses) + `ScriptedAgent` (deterministic `think()`)
+- `tests/unit/test_providers/contract.py` — shared contract assertions for all 3 providers
+- `test_base_provider.py`, `test_base_skill.py` — `inspect.isabstract()` replaces forced instantiation
+- `test_base_agent.py` split → `test_base_agent_logging.py` (both under 150 lines)
+- `test_orchestrator.py` — `ScriptedAgent` + `TestOrchestratorArchitecture` with 2 passing + 3 `xfail`
+- `test_debate_flow.py` — `ScriptedAgent`, removed duplicated MagicMock fixtures
+
+**xfail tests** (deliberate, to be resolved in named branches):
+- `test_judge_tie_is_rejected` → Branch 4
+- `test_invalid_agent_output_raises` → Branch 4
+- `test_winner_must_be_pro_or_con` → Branch 5
+
+**Result**: 264 passed · 3 xfailed · 98.62% coverage · 0 Ruff violations
+
+**Lessons**:
+- `set(vars().values())` fails on unhashable attrs (lists); use `id()` comparison for object-identity checks
+- `inspect.isabstract()` + `__abstractmethods__` is cleaner than trying to force-instantiate an ABC
+- `ScriptedAgent._idx` counter provides a cheap, no-mock way to verify call counts in routing tests
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement

@@ -4,6 +4,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from debate.providers.anthropic_provider import AnthropicProvider
+from tests.unit.test_providers.contract import (
+    assert_base_attrs,
+    assert_usage_recorded,
+    assert_usage_zero,
+)
 
 
 def _make_provider() -> AnthropicProvider:
@@ -25,8 +30,7 @@ class TestAnthropicProviderInit:
         """Provider inherits LLMProvider attributes."""
         mock_cls.return_value = MagicMock()
         prov = _make_provider()
-        assert prov.model == "claude-3-haiku-20240307"
-        assert prov.temperature == 0.7
+        assert_base_attrs(prov, "claude-3-haiku-20240307", 0.7)
 
     @patch("debate.providers.anthropic_provider.Anthropic")
     def test_custom_base_url(self, mock_cls: MagicMock) -> None:
@@ -147,7 +151,7 @@ class TestAnthropicProviderUsageTracking:
         resp.usage = None
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 0, "output_tokens": 0}
+        assert_usage_zero(prov)
 
     @patch("debate.providers.anthropic_provider.Anthropic")
     def test_usage_dict_records_tokens(self, mock_cls: MagicMock) -> None:
@@ -158,7 +162,7 @@ class TestAnthropicProviderUsageTracking:
         resp.usage = {"input_tokens": 10, "output_tokens": 5}
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 10, "output_tokens": 5}
+        assert_usage_recorded(prov, 10, 5)
 
     @patch("debate.providers.anthropic_provider.Anthropic")
     def test_usage_typed_object_records_tokens(self, mock_cls: MagicMock) -> None:
@@ -169,4 +173,4 @@ class TestAnthropicProviderUsageTracking:
         resp.usage = SimpleNamespace(input_tokens=20, output_tokens=10)
         prov = _make_provider()
         prov.chat([{"role": "user", "content": "hi"}])
-        assert prov.get_usage() == {"input_tokens": 20, "output_tokens": 10}
+        assert_usage_recorded(prov, 20, 10)
