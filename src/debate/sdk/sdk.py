@@ -92,6 +92,7 @@ class DebateSDK:
             max_rounds=debate_cfg.get("max_rounds", 10),
             watchdog=self.watchdog,
             logger=self.logger,
+            pricing=self.config.get("pricing", {}),
         )
         return self._orchestrator
 
