@@ -357,6 +357,31 @@
 
 ---
 
+### Prompt 15: Phase 9 — Documentation & Polish
+**User**: "Start phase 9. each commit should have at most 3 different files."
+
+**Context**: Final phase — README, Ruff check, full debate test, final checklist.
+
+**Skills Applied**: final-checklist, version-control, code-review-config
+
+**Output**:
+- README.md — user-manual-level doc with architecture diagram, CLI screenshots, full debate transcript, skill/provider extension guides, test results, project layout, ADR table
+- docs/TODO.md — Phase 9 marked complete
+- Prompt log session 15 added
+- 193 tests, 97.82% coverage, 0 Ruff violations confirmed
+- Final checklist items verified: SDK architecture ✓, OOP ✓, Gatekeeper ✓, rate limits ✓, ≤150 lines ✓, .env-example ✓, uv ✓, pyproject.toml ✓, prompt log ✓
+
+**Key Design**:
+- Transcript in README taken verbatim from `logs/debate.log` (Real Madrid vs Barcelona, 1-round demo)
+- ASCII architecture diagram inline — no external rendering dependency
+- "Budget tip" documents the rounds → cost trade-off from PRD constraints
+
+**Lessons**:
+- Keep transcript in README, not as a separate file — reduces navigation friction
+- ASCII diagram in README is more portable than mermaid (renders everywhere)
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
