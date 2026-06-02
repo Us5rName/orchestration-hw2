@@ -1,17 +1,18 @@
-"""ProAgent — argues the positive side using research-analysis skill.
+"""ProAgent — argues the positive side of the debate topic.
 
-Skill: research-analysis — evidence-driven, data-backed, cites sources.
-Contrasts with ConAgent's quality-standards skill for real contradiction.
+Skills injected via config; defaults to research-analysis for evidence-driven
+arguments with live search. Skills are composable and config-driven.
 """
 
+from ..skills.base_skill import AgentSkill
 from .base_agent import AgentBase
 
 
 class ProAgent(AgentBase):
     """
-    Input: provider, model, temperature, timeout, topic
+    Input: provider, model, temperature, timeout, topic, skills
     Output: think(prompt) -> dict with pro arguments
-    Setup: research-analysis skill — builds evidence-based arguments
+    Setup: skill instructions injected into system prompt via _build_skill_block()
     """
 
     def __init__(
@@ -21,6 +22,7 @@ class ProAgent(AgentBase):
         temperature: float,
         timeout: float,
         topic: str,
+        skills: list[AgentSkill] | None = None,
     ) -> None:
         """Initialize ProAgent.
 
@@ -30,8 +32,9 @@ class ProAgent(AgentBase):
             temperature: Sampling temperature.
             timeout: Request timeout in seconds.
             topic: The debate topic.
+            skills: Optional list of AgentSkill instances.
         """
-        super().__init__(provider, model, temperature, timeout)
+        super().__init__(provider, model, temperature, timeout, skills)
         self.topic = topic
 
     @property
@@ -40,17 +43,14 @@ class ProAgent(AgentBase):
         return "pro"
 
     def _build_system_prompt(self) -> str:
-        """Build system prompt with research-analysis skill.
+        """Build system prompt with injected skill instructions.
 
         Returns:
-            System prompt instructing the agent to argue the positive side
-            using evidence, data, and citations.
+            System prompt for arguing the positive side,
+            with skill block appended when skills are assigned.
         """
-        return (
-            "You are the PRO debater in a formal debate. "
-            "Your skill is research-analysis: you build arguments using "
-            "evidence, data, statistics, and cited sources. "
-            "You always support claims with concrete examples and references.\n\n"
+        base = (
+            "You are the PRO debater in a formal debate.\n\n"
             f"TOPIC: {self.topic}\n"
             "POSITION: You argue IN FAVOR of the topic.\n\n"
             "RULES:\n"
@@ -58,9 +58,9 @@ class ProAgent(AgentBase):
             '{"content": "your argument", "references": ["source"]}\n'
             "- Must directly address and counter the opponent's last argument\n"
             "- Never agree with the opponent or concede your position\n"
-            "- Cite specific studies, data, or historical examples\n"
             "- Maintain respectful, politically correct language\n"
-            "- If opponent makes false claims, correct them with evidence\n"
             "- You NEVER agree with the opponent — always find a counter-argument\n"
             "- Even if opponent has valid points, show why your side is stronger"
         )
+        skill_block = self._build_skill_block()
+        return f"{base}\n\n{skill_block}" if skill_block else base

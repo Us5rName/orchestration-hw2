@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from debate.agents.base_agent import AgentBase
+from debate.skills.base_skill import AgentSkill
 
 
 class ConcreteAgent(AgentBase):
@@ -15,7 +16,19 @@ class ConcreteAgent(AgentBase):
         return "test"
 
     def _build_system_prompt(self) -> str:
-        return "You are a test agent."
+        base = "You are a test agent."
+        skill_block = self._build_skill_block()
+        return f"{base}\n\n{skill_block}" if skill_block else base
+
+
+def _make_skill(name: str, instructions: str, tool: dict | None = None) -> AgentSkill:
+    """Create a minimal mock skill."""
+    skill = MagicMock(spec=AgentSkill)
+    skill.name = name
+    skill.get_instructions.return_value = instructions
+    skill.get_tool_definition.return_value = tool
+    skill.search.return_value = []
+    return skill
 
 
 @pytest.fixture
@@ -76,3 +89,54 @@ class TestAgentBaseThink:
         """Think includes agent role in response."""
         result = agent.think("test")
         assert result["agent"] == "test"
+
+
+class TestAgentBaseSkills:
+    """Test AgentBase skill composition."""
+
+    def test_skill_block_empty_with_no_skills(self, mock_provider: MagicMock) -> None:
+        """_build_skill_block returns empty string when no skills assigned."""
+        agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0)
+        assert agent._build_skill_block() == ""
+
+    def test_skill_block_joins_instructions(self, mock_provider: MagicMock) -> None:
+        """_build_skill_block joins instructions from all skills."""
+        s1 = _make_skill("s1", "Instruction one.")
+        s2 = _make_skill("s2", "Instruction two.")
+        agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0, skills=[s1, s2])
+        block = agent._build_skill_block()
+        assert "Instruction one." in block
+        assert "Instruction two." in block
+
+    def test_think_passes_tools_to_provider(self, mock_provider: MagicMock) -> None:
+        """think() passes skill tool defs to provider.chat()."""
+        tool_def = {"name": "search", "description": "...", "parameters": {}}
+        skill = _make_skill("research", "Do research.", tool=tool_def)
+        agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0, skills=[skill])
+        agent.think("test prompt")
+        _, tools_arg, executor_arg = mock_provider.chat.call_args.args
+        assert tools_arg == [tool_def]
+        assert executor_arg is not None
+
+    def test_think_no_tools_passes_none(self, mock_provider: MagicMock) -> None:
+        """think() passes None tools when skills have no tool definitions."""
+        skill = _make_skill("no-tool", "Instructions.", tool=None)
+        agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0, skills=[skill])
+        agent.think("test prompt")
+        _, tools_arg, executor_arg = mock_provider.chat.call_args.args
+        assert tools_arg is None
+        assert executor_arg is None
+
+    def test_execute_tool_search_delegates_to_skill(self, mock_provider: MagicMock) -> None:
+        """_execute_tool dispatches search to the skill that returns results."""
+        skill = _make_skill("research", "Research.")
+        skill.search.return_value = ["Result one", "Result two"]
+        agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0, skills=[skill])
+        result = agent._execute_tool("search", {"query": "test"})
+        assert "Result one" in result
+        skill.search.assert_called_once_with("test")
+
+    def test_execute_tool_unknown_returns_empty(self, mock_provider: MagicMock) -> None:
+        """_execute_tool returns empty string for unknown tool names."""
+        agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0)
+        assert agent._execute_tool("unknown_tool", {}) == ""

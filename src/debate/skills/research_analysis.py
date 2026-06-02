@@ -4,8 +4,14 @@ Wraps SearchService to expose search as a native LLM tool. Suitable for
 Pro and Con debater agents that need to cite sources and data.
 """
 
-from ..services.search_service import SearchService
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from .base_skill import AgentSkill
+
+if TYPE_CHECKING:
+    from ..services.search_service import SearchService
 
 
 class ResearchAnalysisSkill(AgentSkill):
