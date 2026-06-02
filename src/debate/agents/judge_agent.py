@@ -5,6 +5,8 @@ persuasiveness and communication quality, not factual correctness.
 """
 
 from .base_agent import AgentBase
+from ..providers.base_provider import LLMProvider
+from ..shared.protocols import LoggerProtocol
 from ..skills.base_skill import AgentSkill
 
 
@@ -17,13 +19,13 @@ class JudgeAgent(AgentBase):
 
     def __init__(
         self,
-        provider: object,
+        provider: LLMProvider,
         model: str,
         temperature: float,
         timeout: float,
         topic: str,
         skills: list[AgentSkill] | None = None,
-        logger: object | None = None,
+        logger: LoggerProtocol | None = None,
     ) -> None:
         """Initialize JudgeAgent.
 

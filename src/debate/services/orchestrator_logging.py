@@ -5,18 +5,20 @@ Separates logging concern from orchestration logic. All debate events
 orchestrator stays focused on coordination.
 """
 
+from ..shared.protocols import LoggerProtocol
 
-def log_debate_start(logger: object | None, topic: str, max_rounds: int) -> None:
+
+def log_debate_start(logger: LoggerProtocol | None, topic: str, max_rounds: int) -> None:
     """Log the start of a debate."""
     _safe_log(logger, "Debate started: %s (%d rounds)", topic, max_rounds)
 
 
-def log_round_start(logger: object | None, current: int, total: int) -> None:
+def log_round_start(logger: LoggerProtocol | None, current: int, total: int) -> None:
     """Log the start of a debate round."""
     _safe_log(logger, "--- Round %d/%d ---", current, total)
 
 
-def log_agent_response(logger: object | None, agent: str, response: dict) -> None:
+def log_agent_response(logger: LoggerProtocol | None, agent: str, response: dict) -> None:
     """Log an agent's full response with references."""
     content = response.get("content", "")
     _safe_log(logger, "%s response: %s", agent, content)
@@ -26,7 +28,7 @@ def log_agent_response(logger: object | None, agent: str, response: dict) -> Non
         _safe_log(logger, "%s references: %s", agent, ", ".join(ref_strs))
 
 
-def log_verdict(logger: object | None, verdict: dict) -> None:
+def log_verdict(logger: LoggerProtocol | None, verdict: dict) -> None:
     """Log the judge's verdict with scores and full justification."""
     _safe_log(
         logger,
@@ -41,7 +43,7 @@ def log_verdict(logger: object | None, verdict: dict) -> None:
 
 
 def log_debate_complete(
-    logger: object | None, winner: str, pro_score: float, con_score: float
+    logger: LoggerProtocol | None, winner: str, pro_score: float, con_score: float
 ) -> None:
     """Log the final result of the debate."""
     _safe_log(
@@ -53,7 +55,7 @@ def log_debate_complete(
     )
 
 
-def log_round_cost(logger: object | None, summary: dict) -> None:
+def log_round_cost(logger: LoggerProtocol | None, summary: dict) -> None:
     """Log per-agent token usage and cost for one round."""
     rn = summary.get("round", "?")
     for item in summary.get("breakdown", []):
@@ -75,7 +77,7 @@ def log_round_cost(logger: object | None, summary: dict) -> None:
     _safe_log(logger, "Round %s total cost: $%.6f", rn, summary.get("total_cost_usd", 0.0))
 
 
-def log_debate_cost(logger: object | None, summary: dict) -> None:
+def log_debate_cost(logger: LoggerProtocol | None, summary: dict) -> None:
     """Log total token usage and cost for the entire debate."""
     _safe_log(
         logger,
@@ -94,7 +96,7 @@ def log_debate_cost(logger: object | None, summary: dict) -> None:
         )
 
 
-def _safe_log(logger: object | None, message: str, *args: object) -> None:
+def _safe_log(logger: LoggerProtocol | None, message: str, *args: object) -> None:
     """Log a message only if a logger is configured."""
     if logger is not None:
         logger.info(message % args)

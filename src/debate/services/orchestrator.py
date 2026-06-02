@@ -20,6 +20,8 @@ from .prompt_builder import build_con_prompt, build_pro_prompt
 from .usage_record import UsageRecord, build_from_delta
 from .verdict import decide_winner, format_result, record_verdict
 from ..agents.base_agent import AgentBase
+from ..shared.protocols import LoggerProtocol
+from ..shared.watchdog import Watchdog
 
 
 class DebateOrchestrator:
@@ -36,8 +38,8 @@ class DebateOrchestrator:
         con_agent: AgentBase,
         topic: str,
         max_rounds: int,
-        watchdog: object | None = None,
-        logger: object | None = None,
+        watchdog: Watchdog | None = None,
+        logger: LoggerProtocol | None = None,
         pricing: dict | None = None,
     ) -> None:
         """Initialize orchestrator with agents and debate config.

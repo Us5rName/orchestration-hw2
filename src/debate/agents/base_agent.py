@@ -10,6 +10,7 @@ import json
 from abc import ABC, abstractmethod
 
 from ..providers.base_provider import LLMProvider
+from ..shared.protocols import LoggerProtocol
 from ..skills.base_skill import AgentSkill
 
 
@@ -29,7 +30,7 @@ class AgentBase(ABC):
         temperature: float,
         timeout: float,
         skills: list[AgentSkill] | None = None,
-        logger: object | None = None,
+        logger: LoggerProtocol | None = None,
     ) -> None:
         """Initialize agent with LLM provider, settings, and skills.
 
