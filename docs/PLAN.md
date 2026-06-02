@@ -361,3 +361,52 @@ skills-test/
 ├── .gitignore
 └── src/main.py
 ```
+
+## Phase 11 — Architecture Refactor Plan
+
+### Why tests are refactored before production code
+
+Tests are the specification. Before restructuring production code we must ensure the test suite
+accurately describes the target architecture. If we refactor production code first, the existing
+MagicMock-heavy tests will pass without actually verifying the new contracts — the mocks are too
+permissive. Refactoring the test harness first (Branch 1) means every subsequent production
+change is validated by tests that reflect the intended design, not just tests that happen to pass.
+
+### Why provider contracts, typed config boundaries, and structured outputs are core architecture
+
+Right now the system has three loosely-typed boundaries:
+
+1. **Config boundary**: `ConfigManager.get()` returns raw dicts; callers do `.get("key", default)`
+   everywhere, spreading knowledge of the config schema across the codebase. A typed config
+   model (Branch 2) encodes the schema once and makes every caller statically verifiable.
+
+2. **Provider boundary**: each provider returns a raw string and updates mutable internal counters.
+   A `ProviderResult` contract (Branch 3) means orchestration code never needs to know which
+   provider produced the result, and usage accounting is no longer side-effectful.
+
+3. **Agent output boundary**: agents return dicts from `json.loads()`. Nothing validates that the
+   winner field exists, that scores are integers, or that a tie was not returned. Structured output
+   schemas (Branch 4) make invalid agent responses a hard, early failure rather than a silent
+   downstream bug.
+
+These three are architecture work, not polish — they determine how trustworthy the system is at
+runtime and how safely it can be extended.
+
+### Why the parent/judge must be the only communication router
+
+The homework requirement and ADR-003 both state that all messages flow through the Judge.
+Currently this is enforced by convention (the orchestrator calls agents in the right order) rather
+than by structure (agents cannot call each other). Branch 5 makes the invariant structural:
+`ProAgent` and `ConAgent` will have no reference to each other, and the communication policy
+(`DebatePolicy`) will be an explicit, testable object rather than implicit orchestrator behaviour.
+This also makes the system easier to extend: new policies (e.g. rebuttals, mediator interventions)
+can be added without modifying agent classes.
+
+### Why gatekeeper/watchdog infrastructure must be real or honestly documented
+
+`ApiGatekeeper` and `Watchdog` are constructed and listed in the architecture diagrams, but
+inspection of the runtime path shows they are not in the hot path of actual API calls or the
+debate loop. This is a correctness gap: the system claims rate limiting and keep-alive monitoring
+that does not actually fire. Branch 6 resolves this by either wiring them into the real path
+(preferred) or documenting their current status as "future work" with explicit TODOs, so the
+architecture documentation is honest about what the system actually does.

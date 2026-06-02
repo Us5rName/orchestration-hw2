@@ -449,6 +449,37 @@
 
 ---
 
+### Prompt 0 (Phase 11 Planning) — Staged Architecture Refactor Roadmap (2026-06-03)
+**User**: "Document the full refactor roadmap before touching production code."
+
+**Context**: All 10 original phases are complete (258 tests, 99% coverage, 0 Ruff violations).
+Before any production refactoring, the full roadmap must be documented in TODO.md and PLAN.md so
+every subsequent branch has a clear, agreed scope.
+
+**Branch**: `docs/refactor-roadmap` (documentation-only, no source changes)
+
+**Output**:
+- `docs/TODO.md` — Phase 11 added with 9 ordered branches covering: test harness consolidation,
+  typed config/SDK boundary, provider result contract, structured agent outputs, parent-controlled
+  state machine, gatekeeper/watchdog real use, skills canonicalization, log cleanup, and final
+  validation
+- `docs/PLAN.md` — Architecture Refactor Plan section added explaining the rationale for each
+  major refactor category
+- `docs/prompt_log/PROMPT_LOG.md` — this entry
+
+**Key Decisions**:
+- Tests are refactored before production code: existing MagicMock-heavy tests are too permissive
+  to validate new contracts; the harness must describe the target architecture first
+- Typed config, provider contracts, and structured outputs are core correctness work, not polish
+- Parent/judge routing must become structural (no child-to-child references), not just conventional
+- Gatekeeper and watchdog must either be in the real hot path or honestly documented as future work
+
+**Best Practice Applied**: Document the full roadmap (and its rationale) as a committed doc change
+before any production refactoring begins — ensures the scope is reviewable and agreed before code
+changes accumulate.
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement

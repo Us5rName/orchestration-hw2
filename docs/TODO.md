@@ -100,6 +100,69 @@
 - [x] 230 tests passing · 99% coverage · 0 Ruff violations
 - [x] README updated with automatic cost tracking documentation
 
+## Phase 11 — Architecture Refactor and Test Consolidation
+
+### Branch 1 — test/refactor-harness-and-duplicates
+- [ ] Build reliable typed fakes for providers and agents (replace MagicMock-heavy tests)
+- [ ] Consolidate duplicated provider tests into contract-style tests where possible
+- [ ] Split test files that exceed the 150-line limit into focused units
+- [ ] Replace direct abstract-class instantiation tests with `inspect`-based abstractness tests
+- [ ] Keep or improve meaningful coverage; do not delete tests just to reduce count
+
+### Branch 2 — refactor/typed-config-sdk-boundary
+- [ ] Introduce typed config section dataclasses or models (DebateConfig, AgentConfig, GatekeeperConfig, etc.)
+- [ ] Make `ConfigManager` expose typed accessors in addition to raw `get()`
+- [ ] Type the `DebateSDK` public boundary (no `object` parameters)
+- [ ] Type the CLI/menu boundary — accept a concrete `DebateSDK` or narrow `Protocol`
+- [ ] Type agents: replace `provider: object` with `provider: LLMProvider`
+- [ ] Type the logger boundary consistently (`LogManager | None` throughout)
+
+### Branch 3 — refactor/provider-result-contract
+- [ ] Define an internal `ProviderResult` datatype (response text + usage metadata)
+- [ ] Make `OpenAIProvider`, `AnthropicProvider`, and `GeminiProvider` return `ProviderResult`
+- [ ] Centralise usage extraction — no usage-parsing logic outside provider adapters
+- [ ] Keep vendor-specific SDK details isolated inside each provider's `_chat()` method
+- [ ] Add `UsageSnapshot` or equivalent so delta tracking does not depend on mutable state
+
+### Branch 4 — refactor/structured-agent-outputs
+- [ ] Define internal schemas for debate messages, agent responses, judge decisions, and debate results
+- [ ] Validate all agent outputs against schema on receipt
+- [ ] Reject and raise on invalid JSON, invalid winner value, tie decisions, missing required fields
+- [ ] Ensure the orchestrator never continues with a malformed agent response
+
+### Branch 5 — refactor/parent-controlled-state-machine
+- [ ] Make the father/judge as sole communication router explicit in code, not just docs
+- [ ] Ensure `ProAgent` and `ConAgent` have no direct references to each other
+- [ ] Add explicit `DebatePolicy` (or equivalent) for round rules, tie prevention, and winner validation
+- [ ] Add tests that assert no direct child-to-child communication path exists
+- [ ] Add tests for parent routing and no-tie enforcement at the orchestrator boundary
+- [ ] Log every important debate state transition (round start, argument received, verdict issued)
+
+### Branch 6 — refactor/gatekeeper-watchdog-real-use
+- [ ] Audit whether `ApiGatekeeper` is in the real provider call path (not just instantiated)
+- [ ] Audit whether `Watchdog` is called during the real debate loop (not just constructed)
+- [ ] If decorative: wire `ApiGatekeeper` into provider calls and `Watchdog` into the debate loop, OR document clearly as future work in PLAN.md
+- [ ] Add tests that verify rate-limiting fires when requests-per-minute is exceeded
+- [ ] Add a test that verifies the watchdog ping is called during `orchestrator.run()`
+
+### Branch 7 — docs/skills-canonicalization
+- [ ] Clarify canonical skill locations: runtime debate-agent skills vs Claude Code development-time skills
+- [ ] Verify whether `.claude/skills/` exists locally and document or remove the ambiguity
+- [ ] If duplicate skill directories exist, establish one source of truth and remove or archive the other
+- [ ] Update `docs/PRD_agent_skills.md` to reflect the final canonical location
+
+### Branch 8 — chore/logs-cleanup-verification
+- [ ] Verify no runtime log files are tracked in git (`git status` and `git ls-files logs/`)
+- [ ] Verify `.gitignore` excludes `logs/` correctly
+- [ ] If sample logs are needed for documentation, move them to `docs/examples/`
+- [ ] Do not commit generated runtime artifacts
+
+### Branch 9 — quality/final-validation
+- [ ] Run full unit, integration, lint, and coverage suite; all must pass
+- [ ] Verify every Python source file is within the 150 non-blank/non-comment line limit
+- [ ] Update README, TODO, PLAN, and PROMPT_LOG with final state
+- [ ] Perform a smoke test (`uv run debate`) verifying end-to-end flow with a real API key
+
 ## Definition of Done
 
 | Phase | Criteria |
