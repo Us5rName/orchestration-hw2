@@ -39,6 +39,15 @@ class LLMProvider(ABC):
         self.base_url = base_url
         self.temperature = temperature
         self.timeout = timeout
+        self._usage: dict[str, int] = {"input_tokens": 0, "output_tokens": 0}
+
+    def get_usage(self) -> dict[str, int]:
+        """Return cumulative token usage for this provider instance.
+
+        Returns:
+            Dict with input_tokens and output_tokens counts.
+        """
+        return dict(self._usage)
 
     def chat(
         self,
