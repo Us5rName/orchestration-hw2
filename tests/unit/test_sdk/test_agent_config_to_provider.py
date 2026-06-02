@@ -8,6 +8,7 @@ instances.
 from unittest.mock import MagicMock, patch
 
 from debate.sdk.sdk import DebateSDK
+from debate.shared.paths import DEFAULT_SETUP_PATH
 from tests.unit.test_sdk.conftest import apply_typed_config
 
 
@@ -24,7 +25,7 @@ class TestAgentConfigToProvider:
         ):
             mock_cm.return_value.get = MagicMock(side_effect=mock_get_factory(base_config))
             apply_typed_config(mock_cm.return_value, base_config)
-            sdk = DebateSDK(config_path="config/setup.json")
+            sdk = DebateSDK(config_path=DEFAULT_SETUP_PATH)
             sdk._create_agent("judge")
 
             provider_cfg = mock_factory.call_args[0][1]
@@ -40,7 +41,7 @@ class TestAgentConfigToProvider:
         ):
             mock_cm.return_value.get = MagicMock(side_effect=mock_get_factory(base_config))
             apply_typed_config(mock_cm.return_value, base_config)
-            sdk = DebateSDK(config_path="config/setup.json")
+            sdk = DebateSDK(config_path=DEFAULT_SETUP_PATH)
             sdk._create_agent("pro")
 
             provider_cfg = mock_factory.call_args[0][1]
@@ -56,7 +57,7 @@ class TestAgentConfigToProvider:
         ):
             mock_cm.return_value.get = MagicMock(side_effect=mock_get_factory(base_config))
             apply_typed_config(mock_cm.return_value, base_config)
-            sdk = DebateSDK(config_path="config/setup.json")
+            sdk = DebateSDK(config_path=DEFAULT_SETUP_PATH)
             sdk._create_agent("con")
 
             provider_cfg = mock_factory.call_args[0][1]
