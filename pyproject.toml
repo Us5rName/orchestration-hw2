@@ -19,7 +19,7 @@ dev = [
 ]
 
 [project.scripts]
-debate = "src.main:main"
+debate = "debate.main:main"
 
 [tool.ruff]
 line-length = 100
@@ -34,7 +34,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["src/main.py", "*/tests/*", "src/**/gui/*"]
+omit = ["src/debate/main.py", "*/tests/*", "src/**/gui/*"]
 
 [tool.coverage.report]
 fail_under = 85
