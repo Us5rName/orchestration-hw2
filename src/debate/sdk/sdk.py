@@ -75,7 +75,7 @@ class DebateSDK:
         provider_cfg = {**agent_cfg, "timeout": timeout}
         provider = create_provider(agent_cfg.get("provider", "openai"), provider_cfg)
         topic = self.config.get("debate", {}).get("topic", "")
-        return create_agent(role, agent_cfg, provider, topic, timeout, self._skill_registry)
+        return create_agent(role, agent_cfg, provider, topic, timeout, self._skill_registry, self.logger)
 
     def _create_orchestrator(self) -> DebateOrchestrator:
         """Create orchestrator with all agents.

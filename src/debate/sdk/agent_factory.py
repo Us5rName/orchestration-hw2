@@ -20,6 +20,7 @@ def create_agent(
     topic: str,
     timeout: float,
     registry: SkillRegistry,
+    logger: object | None = None,
 ) -> JudgeAgent | ProAgent | ConAgent:
     """Create an agent with skills resolved from the SkillRegistry.
 
@@ -30,6 +31,7 @@ def create_agent(
         topic: The debate topic.
         timeout: Request timeout in seconds.
         registry: SkillRegistry used to resolve skill name strings.
+        logger: Optional LogManager passed through to the agent.
 
     Returns:
         Configured agent instance with resolved skills.
@@ -40,12 +42,12 @@ def create_agent(
 
     if role == "judge":
         return JudgeAgent(
-            provider, model, agent_cfg.get("temperature", 0.3), timeout, topic, skills
+            provider, model, agent_cfg.get("temperature", 0.3), timeout, topic, skills, logger
         )
     if role == "pro":
         return ProAgent(
-            provider, model, agent_cfg.get("temperature", 0.7), timeout, topic, skills
+            provider, model, agent_cfg.get("temperature", 0.7), timeout, topic, skills, logger
         )
     return ConAgent(
-        provider, model, agent_cfg.get("temperature", 0.7), timeout, topic, skills
+        provider, model, agent_cfg.get("temperature", 0.7), timeout, topic, skills, logger
     )

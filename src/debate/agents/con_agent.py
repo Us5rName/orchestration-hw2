@@ -23,6 +23,7 @@ class ConAgent(AgentBase):
         timeout: float,
         topic: str,
         skills: list[AgentSkill] | None = None,
+        logger: object | None = None,
     ) -> None:
         """Initialize ConAgent.
 
@@ -33,8 +34,9 @@ class ConAgent(AgentBase):
             timeout: Request timeout in seconds.
             topic: The debate topic.
             skills: Optional list of AgentSkill instances.
+            logger: Optional LogManager for structured logging.
         """
-        super().__init__(provider, model, temperature, timeout, skills)
+        super().__init__(provider, model, temperature, timeout, skills, logger)
         self.topic = topic
 
     @property
