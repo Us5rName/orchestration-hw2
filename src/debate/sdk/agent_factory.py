@@ -21,7 +21,7 @@ def create_agent(
     topic: str,
     timeout: float,
     registry: SkillRegistry,
-    logger: object | None = None,
+    logger: LoggerProtocol | None = None,
 ) -> JudgeAgent | ProAgent | ConAgent:
     """Create an agent with skills resolved from the SkillRegistry.
 

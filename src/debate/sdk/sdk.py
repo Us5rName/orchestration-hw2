@@ -7,17 +7,17 @@ Setup: wires ConfigManager, LogManager, providers, agents, orchestrator
 
 from pathlib import Path
 
-from .agent_factory import create_agent
-from .provider_factory import create_provider
 from ..agents.con_agent import ConAgent
 from ..agents.judge_agent import JudgeAgent
 from ..agents.pro_agent import ProAgent
 from ..services.orchestrator import DebateOrchestrator
 from ..shared.config import ConfigManager
-from ..shared.gatekeeper import ApiGatekeeper, RateLimitConfig
+from ..shared.gatekeeper import ApiGatekeeper
 from ..shared.logger import LogManager
 from ..shared.watchdog import Watchdog
 from ..skills.registry import SkillRegistry, default_registry
+from .agent_factory import create_agent
+from .provider_factory import create_provider
 
 
 class DebateSDK:
@@ -42,21 +42,12 @@ class DebateSDK:
 
     def _init_logger(self) -> None:
         """Initialize LogManager from config."""
-        log_config = self.config.get("logging", {})
-        self.logger = LogManager(log_config)
+        self.logger = LogManager(self.config.logging_config.to_dict())
         self.logger.info("DebateSDK initialized")
 
     def _init_gatekeeper(self) -> None:
         """Initialize ApiGatekeeper from config."""
-        gate_config = self.config.get("gatekeeper", {})
-        self.gatekeeper = ApiGatekeeper(
-            config=RateLimitConfig(
-                requests_per_minute=gate_config.get("requests_per_minute", 30),
-                requests_per_hour=gate_config.get("requests_per_hour", 500),
-                max_retries=gate_config.get("max_retries", 3),
-                retry_after_seconds=gate_config.get("retry_delay_seconds", 5),
-            )
-        )
+        self.gatekeeper = ApiGatekeeper(config=self.config.gatekeeper_config)
 
     def _init_watchdog(self) -> None:
         """Initialize Watchdog for process monitoring."""
@@ -71,12 +62,25 @@ class DebateSDK:
         Returns:
             Configured agent instance with skills attached.
         """
-        agent_cfg = self.config.get("agents", {}).get(role, {})
-        timeout = self.config.get("debate", {}).get("request_timeout_seconds", 60)
-        provider_cfg = {**agent_cfg, "timeout": timeout}
-        provider = create_provider(agent_cfg.get("provider", "openai"), provider_cfg)
-        topic = self.config.get("debate", {}).get("topic", "")
-        return create_agent(role, agent_cfg, provider, topic, timeout, self._skill_registry, self.logger)
+        agent_cfg = self.config.agent_config(role)
+        debate_cfg = self.config.debate_config
+        provider_dict = {
+            "provider": agent_cfg.provider,
+            "model": agent_cfg.model,
+            "temperature": agent_cfg.temperature,
+            "base_url": agent_cfg.base_url,
+            "timeout": agent_cfg.timeout,
+        }
+        provider = create_provider(agent_cfg.provider, provider_dict)
+        agent_dict = {
+            "model": agent_cfg.model,
+            "temperature": agent_cfg.temperature,
+            "skills": agent_cfg.skills,
+        }
+        return create_agent(
+            role, agent_dict, provider, debate_cfg.topic,
+            agent_cfg.timeout, self._skill_registry, self.logger,
+        )
 
     def _create_orchestrator(self) -> DebateOrchestrator:
         """Create orchestrator with all agents.
@@ -84,16 +88,23 @@ class DebateSDK:
         Returns:
             Configured DebateOrchestrator instance.
         """
-        debate_cfg = self.config.get("debate", {})
+        debate_cfg = self.config.debate_config
+        pricing_cfg = self.config.pricing_config
+        pricing_dict = {
+            "unit": pricing_cfg.unit,
+            "judge": {"input": pricing_cfg.judge.input, "output": pricing_cfg.judge.output},
+            "pro": {"input": pricing_cfg.pro.input, "output": pricing_cfg.pro.output},
+            "con": {"input": pricing_cfg.con.input, "output": pricing_cfg.con.output},
+        }
         self._orchestrator = DebateOrchestrator(
             judge_agent=self._create_agent("judge"),
             pro_agent=self._create_agent("pro"),
             con_agent=self._create_agent("con"),
-            topic=debate_cfg.get("topic", ""),
-            max_rounds=debate_cfg.get("max_rounds", 10),
+            topic=debate_cfg.topic,
+            max_rounds=debate_cfg.max_rounds,
             watchdog=self.watchdog,
             logger=self.logger,
-            pricing=self.config.get("pricing", {}),
+            pricing=pricing_dict,
         )
         return self._orchestrator
 

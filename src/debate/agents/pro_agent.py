@@ -4,10 +4,10 @@ Skills injected via config; defaults to research-analysis for evidence-driven
 arguments with live search. Skills are composable and config-driven.
 """
 
-from .base_agent import AgentBase
 from ..providers.base_provider import LLMProvider
 from ..shared.protocols import LoggerProtocol
 from ..skills.base_skill import AgentSkill
+from .base_agent import AgentBase
 
 
 class ProAgent(AgentBase):
