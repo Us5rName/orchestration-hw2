@@ -4,8 +4,8 @@ Skills injected via config; defaults to research-analysis for evidence-driven
 arguments with live search. Skills are composable and config-driven.
 """
 
-from ..skills.base_skill import AgentSkill
 from .base_agent import AgentBase
+from ..skills.base_skill import AgentSkill
 
 
 class ProAgent(AgentBase):

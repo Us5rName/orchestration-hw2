@@ -4,8 +4,8 @@ Skills injected via config; defaults to persuasion-scoring which evaluates
 persuasiveness and communication quality, not factual correctness.
 """
 
-from ..skills.base_skill import AgentSkill
 from .base_agent import AgentBase
+from ..skills.base_skill import AgentSkill
 
 
 class JudgeAgent(AgentBase):

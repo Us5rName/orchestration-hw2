@@ -5,7 +5,6 @@ Output: run() -> final verdict with winner and scores
 Setup: creates DebateState, coordinates agents through rounds
 """
 
-from ..agents.base_agent import AgentBase
 from .cost_calculator import summarize_debate, summarize_round
 from .debate_state import DebateState
 from .orchestrator_logging import (
@@ -20,6 +19,7 @@ from .orchestrator_logging import (
 from .prompt_builder import build_con_prompt, build_pro_prompt
 from .usage_record import UsageRecord, build_from_delta
 from .verdict import decide_winner, format_result, record_verdict
+from ..agents.base_agent import AgentBase
 
 
 class DebateOrchestrator:

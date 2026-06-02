@@ -7,6 +7,8 @@ Setup: wires ConfigManager, LogManager, providers, agents, orchestrator
 
 from pathlib import Path
 
+from .agent_factory import create_agent
+from .provider_factory import create_provider
 from ..agents.con_agent import ConAgent
 from ..agents.judge_agent import JudgeAgent
 from ..agents.pro_agent import ProAgent
@@ -16,8 +18,6 @@ from ..shared.gatekeeper import ApiGatekeeper, RateLimitConfig
 from ..shared.logger import LogManager
 from ..shared.watchdog import Watchdog
 from ..skills.registry import SkillRegistry, default_registry
-from .agent_factory import create_agent
-from .provider_factory import create_provider
 
 
 class DebateSDK:

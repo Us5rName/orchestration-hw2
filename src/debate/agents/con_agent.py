@@ -4,8 +4,8 @@ Skills injected via config; defaults to quality-standards for critical
 evaluation, optionally combined with research-analysis for counter-evidence.
 """
 
-from ..skills.base_skill import AgentSkill
 from .base_agent import AgentBase
+from ..skills.base_skill import AgentSkill
 
 
 class ConAgent(AgentBase):
