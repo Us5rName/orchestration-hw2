@@ -78,10 +78,10 @@
 - [x] 0 Ruff violations
 
 ## Phase 9: Documentation & Polish
-- [ ] README.md with screenshots
-- [ ] Ruff check — zero violations
-- [ ] Full debate session test
-- [ ] Final checklist review
+- [x] README.md with screenshots
+- [x] Ruff check — zero violations
+- [x] Full debate session test
+- [x] Final checklist review
 
 ## Definition of Done
 
