@@ -23,6 +23,13 @@ class TestValidateConfigVersion:
         config_file.write_text(json.dumps({"version": "1.00"}))
         validate_config_version(str(config_file))  # must not raise
 
+    def test_invalid_json_raises(self, tmp_path: Path) -> None:
+        """Malformed JSON raises ConfigValidationError."""
+        bad = tmp_path / "bad.json"
+        bad.write_text("{not valid json")
+        with pytest.raises(ConfigValidationError, match="Invalid JSON"):
+            validate_config_version(str(bad))
+
     def test_missing_version_raises(self, tmp_path: Path) -> None:
         """Missing version key raises ConfigValidationError."""
         config_file = tmp_path / "config.json"
