@@ -1,5 +1,7 @@
 """Tests for LLMProvider base class."""
 
+import inspect
+
 import pytest
 
 from debate.providers.base_provider import LLMProvider
@@ -39,10 +41,13 @@ class TestLLMProviderInit:
         """Provider stores timeout."""
         assert provider.timeout == 30.0
 
-    def test_abstract_cannot_instantiate(self) -> None:
-        """LLMProvider cannot be instantiated directly."""
-        with pytest.raises(TypeError):
-            LLMProvider()  # type: ignore[abstract]
+    def test_is_abstract(self) -> None:
+        """LLMProvider is an abstract class."""
+        assert inspect.isabstract(LLMProvider)
+
+    def test_abstract_methods(self) -> None:
+        """LLMProvider declares _chat as abstract."""
+        assert "_chat" in LLMProvider.__abstractmethods__
 
 
 class TestLLMProviderChat:
