@@ -19,15 +19,18 @@ graph TD
 graph TD
     CLI[Terminal CLI] -->|delegates| SDK[SDK Layer]
     SDK -->|orchestrates| DebateOrchestrator[Debate Orchestrator]
-    DebateOrchestrator -->|manages| JudgeAgent[Judge Agent]
-    DebateOrchestrator -->|manages| ProAgent[Pro Agent]
-    DebateOrchestrator -->|manages| ConAgent[Con Agent]
+    SDK -->|resolves| SkillRegistry[Skill Registry]
+    SkillRegistry -->|injects skills into| JudgeAgent[Judge Agent]
+    SkillRegistry -->|injects skills into| ProAgent[Pro Agent]
+    SkillRegistry -->|injects skills into| ConAgent[Con Agent]
+    DebateOrchestrator -->|manages| JudgeAgent
+    DebateOrchestrator -->|manages| ProAgent
+    DebateOrchestrator -->|manages| ConAgent
     JudgeAgent -->|via| Gatekeeper[API Gatekeeper]
     ProAgent -->|via| Gatekeeper
     ConAgent -->|via| Gatekeeper
     Gatekeeper -->|rate-limited| LLMProviders[LLM Providers]
-    ProAgent -->|search| SearchTool[Search Tool]
-    ConAgent -->|search| SearchTool
+    ResearchAnalysisSkill -->|search| SearchTool[Search Tool]
     SDK -->|uses| Logger[Structured Logger]
     SDK -->|uses| ConfigManager[Config Manager]
     SDK -->|uses| Watchdog[Watchdog Monitor]
@@ -50,6 +53,14 @@ graph TD
         DebateState[DebateState]
     end
 
+    subgraph Skills
+        AgentSkill[AgentSkill ABC]
+        ResearchAnalysisSkill[ResearchAnalysisSkill]
+        QualityStandardsSkill[QualityStandardsSkill]
+        PersuasionScoringSkill[PersuasionScoringSkill]
+        SkillRegistry[SkillRegistry]
+    end
+
     subgraph Infrastructure
         LLMProvider[LLM Provider Interface]
         OpenAIProvider[OpenAIProvider]
@@ -66,10 +77,16 @@ graph TD
     end
 
     DebateSDK --> DebateOrchestrator
+    DebateSDK --> SkillRegistry
+    SkillRegistry --> AgentSkill
+    ResearchAnalysisSkill --> AgentSkill
+    QualityStandardsSkill --> AgentSkill
+    PersuasionScoringSkill --> AgentSkill
     DebateOrchestrator --> AgentBase
     JudgeAgent --> AgentBase
     ProAgent --> AgentBase
     ConAgent --> AgentBase
+    AgentBase --> AgentSkill
     AgentBase --> LLMProvider
     OpenAIProvider --> LLMProvider
     AnthropicProvider --> LLMProvider
@@ -94,6 +111,14 @@ graph TD
         JudgeAgent[JudgeAgent]
         ProAgent[ProAgent]
         ConAgent[ConAgent]
+    end
+
+    subgraph Skills
+        AgentSkill[AgentSkill ABC]
+        ResearchAnalysisSkill[ResearchAnalysisSkill]
+        QualityStandardsSkill[QualityStandardsSkill]
+        PersuasionScoringSkill[PersuasionScoringSkill]
+        SkillRegistry[SkillRegistry]
     end
 
     subgraph Providers
@@ -127,13 +152,18 @@ graph TD
     JudgeAgent -->|extends| AgentBase
     ProAgent -->|extends| AgentBase
     ConAgent -->|extends| AgentBase
+    ResearchAnalysisSkill -->|implements| AgentSkill
+    QualityStandardsSkill -->|implements| AgentSkill
+    PersuasionScoringSkill -->|implements| AgentSkill
+    AgentBase -->|composes| AgentSkill
+    SkillRegistry -->|holds| AgentSkill
     OpenAIProvider -->|implements| ILLMProvider
     AnthropicProvider -->|implements| ILLMProvider
     GeminiProvider -->|implements| ILLMProvider
     AgentBase -->|uses| ILLMProvider
     AgentBase -->|uses| ApiGatekeeper
-    ProAgent -->|uses| SearchService
-    ConAgent -->|uses| SearchService
+    AgentBase -->|delegates search| AgentSkill
+    ResearchAnalysisSkill -->|uses| SearchService
     DebateOrchestrator -->|uses| JudgeAgent
     DebateOrchestrator -->|uses| ProAgent
     DebateOrchestrator -->|uses| ConAgent
@@ -148,10 +178,15 @@ graph TD
 
 | Class | Responsibility |
 |-------|---------------|
-| `AgentBase` | Abstract base for all agents; LLM call, prompt building, timeout |
+| `AgentBase` | Abstract base for all agents; LLM call, skill composition, prompt building, timeout |
 | `JudgeAgent` | Enforces rules, scores persuasiveness, decides winner |
 | `ProAgent` | Argues positive side; uses search for evidence |
 | `ConAgent` | Argues negative side; uses search for evidence |
+| `AgentSkill` | Abstract base for all agent skills; defines `name`, `get_instructions()`, and default no-op `search()` |
+| `ResearchAnalysisSkill` | Injects evidence-driven instruction text; owns `SearchService` and implements `search()`; usable by any agent |
+| `QualityStandardsSkill` | Injects critical-evaluation, fallacy-finding instruction text; usable by any agent |
+| `PersuasionScoringSkill` | Injects persuasiveness-scoring, no-tie instruction text; usable by any agent |
+| `SkillRegistry` | Maps skill name strings → `AgentSkill` instances; plugin registry |
 | `ILLMProvider` | Interface for LLM providers |
 | `OpenAIProvider` | OpenAI API implementation |
 | `AnthropicProvider` | Anthropic API implementation |
@@ -245,6 +280,18 @@ graph TD
 **Decision**: Use DuckDuckGo for free, no-key search
 **Rationale**: No API key needed; sufficient for citation purposes
 
+### ADR-005: Class-Based Agent Skills Plugin Architecture
+**Decision**: Agent skills are classes implementing `AgentSkill` ABC, registered in `SkillRegistry`,
+and injected into agents via constructor
+**Rationale**: Skills were previously hardcoded strings inside `_build_system_prompt()` — not
+configurable, not composable, not independently testable. The extensibility skill requires a plugin
+architecture; the modular-design skill requires independent testability; sdk-architecture requires
+all wiring through the SDK. Class-based skills satisfy all three.
+**Trade-offs**: More files than a single dict of strings; offset by testability and extensibility gains
+**Alternatives rejected**:
+- YAML/JSON text files: no type safety, no logic, cannot be unit-tested as classes
+- Skill as a mixin on the agent: violates single responsibility, couples skill to agent class hierarchy
+
 ## Project Structure
 
 ```
@@ -266,6 +313,13 @@ skills-test/
 │       │   ├── judge_agent.py
 │       │   ├── pro_agent.py
 │       │   └── con_agent.py
+│       ├── skills/
+│       │   ├── __init__.py
+│       │   ├── base_skill.py
+│       │   ├── research_analysis.py
+│       │   ├── quality_standards.py
+│       │   ├── persuasion_scoring.py
+│       │   └── registry.py
 │       ├── providers/
 │       │   ├── base_provider.py
 │       │   ├── openai_provider.py
@@ -282,6 +336,7 @@ skills-test/
 ├── tests/
 │   ├── unit/
 │   │   ├── test_agents/
+│   │   ├── test_skills/
 │   │   ├── test_providers/
 │   │   ├── test_services/
 │   │   ├── test_shared/
@@ -296,7 +351,10 @@ skills-test/
 ├── docs/
 │   ├── PRD.md
 │   ├── PLAN.md
-│   └── TODO.md
+│   ├── TODO.md
+│   ├── PRD_sdk.md
+│   ├── PRD_debate_orchestration.md
+│   └── PRD_agent_skills.md
 ├── README.md
 ├── pyproject.toml
 ├── .env-example
