@@ -1,9 +1,19 @@
-"""Config version and skill-role validation at startup."""
+"""Config version and skill-role validation at startup.
+
+All functions raise ConfigValidationError on invalid configuration.
+The application entry point (main.py) is responsible for catching
+ConfigValidationError and converting it to SystemExit.
+"""
 
 import json
-import sys
 from pathlib import Path
 
+from .paths import (
+    DEFAULT_LOGGING_PATH,
+    DEFAULT_RATE_LIMITS_PATH,
+    DEFAULT_SETUP_PATH,
+    resolve_project_path,
+)
 from .version import REQUIRED_CONFIG_VERSION
 
 _JUDGE_SKILLS: frozenset[str] = frozenset({"persuasion-scoring"})
@@ -12,40 +22,41 @@ _VALID_PRICING_UNITS: frozenset[str] = frozenset({"per_1m_tokens", "per_1k_token
 _PRICING_ROLES: frozenset[str] = frozenset({"judge", "pro", "con"})
 
 
-def _load_json(path: str) -> dict:
-    """Load a JSON file and return its contents."""
-    file_path = Path(path)
-    if not file_path.exists():
-        print(f"ERROR: Config file not found: {path}")
-        sys.exit(1)
-    with open(file_path, encoding="utf-8") as f:
-        return json.load(f)
+class ConfigValidationError(RuntimeError):
+    """Raised when project configuration is invalid."""
 
 
-def validate_config_version(path: str, version_key: str = "version") -> None:
+def _load_json(path: Path) -> dict:
+    """Load JSON from path; raise ConfigValidationError on any failure."""
+    if not path.exists():
+        raise ConfigValidationError(f"Config file not found: {path}")
+    try:
+        with path.open(encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as exc:
+        raise ConfigValidationError(f"Invalid JSON in {path}: {exc}") from exc
+
+
+def validate_config_version(path: str | Path, version_key: str = "version") -> None:
     """Validate that a config file's version matches the required version.
 
     Args:
-        path: Path to the JSON config file.
-        version_key: The key that holds the version string.
-            For rate_limits.json the version is nested under "rate_limits".
+        path: Path to the JSON config file (absolute or relative to project root).
+        version_key: Key that holds the version string.
 
     Raises:
-        SystemExit: If versions don't match or file is missing.
+        ConfigValidationError: If version is missing, mismatched, or file is absent.
     """
-    data = _load_json(path)
+    resolved = resolve_project_path(path)
+    data = _load_json(resolved)
     file_version = data.get(version_key)
-
     if file_version is None:
-        print(f"ERROR: No '{version_key}' key in {path}")
-        sys.exit(1)
-
+        raise ConfigValidationError(f"No '{version_key}' key in {resolved}")
     if file_version != REQUIRED_CONFIG_VERSION:
-        print(
-            f"ERROR: Version mismatch in {path}: "
+        raise ConfigValidationError(
+            f"Version mismatch in {resolved}: "
             f"expected {REQUIRED_CONFIG_VERSION}, got {file_version}"
         )
-        sys.exit(1)
 
 
 def validate_pricing(config: dict) -> None:
@@ -55,81 +66,81 @@ def validate_pricing(config: dict) -> None:
         config: Parsed setup.json dict.
 
     Raises:
-        ValueError: If pricing is missing, has an unsupported unit, or any
-            role is missing input/output prices or uses non-numeric values.
+        ConfigValidationError: If pricing is missing, invalid, or incomplete.
     """
     pricing = config.get("pricing")
     if pricing is None:
-        raise ValueError("Missing 'pricing' section in config")
+        raise ConfigValidationError("Missing 'pricing' section in config")
     unit = pricing.get("unit")
     if unit not in _VALID_PRICING_UNITS:
-        raise ValueError(
+        raise ConfigValidationError(
             f"Invalid pricing unit {unit!r}; expected one of {sorted(_VALID_PRICING_UNITS)}"
         )
     for role in _PRICING_ROLES:
         role_cfg = pricing.get(role)
         if not role_cfg:
-            raise ValueError(f"Missing pricing for role {role!r}")
+            raise ConfigValidationError(f"Missing pricing for role {role!r}")
         for key in ("input", "output"):
             val = role_cfg.get(key)
             if val is None or not isinstance(val, (int, float)):
-                raise ValueError(f"Invalid pricing[{role!r}][{key!r}]: {val!r}")
+                raise ConfigValidationError(f"Invalid pricing[{role!r}][{key!r}]: {val!r}")
 
 
 def validate_agent_skills(config: dict) -> None:
     """Validate skill assignments match agent role semantics.
 
-    Judge may only use judge skills. Pro and Con may only use debater skills.
-
     Args:
         config: Parsed setup.json dict.
 
     Raises:
-        ValueError: If an agent is assigned a skill that does not match its role.
+        ConfigValidationError: If an agent is assigned a skill that does not match its role.
     """
     agents = config.get("agents", {})
-
     judge_skills = set(agents.get("judge", {}).get("skills", []))
     invalid_judge = judge_skills & _DEBATER_SKILLS
     if invalid_judge:
-        raise ValueError(f"Judge cannot use debater skills: {sorted(invalid_judge)}")
-
+        raise ConfigValidationError(
+            f"Judge cannot use debater skills: {sorted(invalid_judge)}"
+        )
     for role in ("pro", "con"):
         skills = set(agents.get(role, {}).get("skills", []))
         invalid = skills & _JUDGE_SKILLS
         if invalid:
-            raise ValueError(f"'{role}' agent cannot use judge skills: {sorted(invalid)}")
+            raise ConfigValidationError(
+                f"'{role}' agent cannot use judge skills: {sorted(invalid)}"
+            )
 
 
 def validate_all_configs(
-    setup_path: str = "config/setup.json",
-    rate_limits_path: str = "config/rate_limits.json",
-    logging_path: str = "config/logging_config.json",
+    setup_path: str | Path | None = None,
+    rate_limits_path: str | Path | None = None,
+    logging_path: str | Path | None = None,
 ) -> None:
     """Validate all config files at startup.
 
     Args:
-        setup_path: Path to main setup config.
-        rate_limits_path: Path to rate limits config.
-        logging_path: Path to logging config.
-    """
-    validate_config_version(setup_path, "version")
-    validate_config_version(logging_path, "version")
+        setup_path: Path to main setup config; defaults to DEFAULT_SETUP_PATH.
+        rate_limits_path: Path to rate limits config; defaults to DEFAULT_RATE_LIMITS_PATH.
+        logging_path: Path to logging config; defaults to DEFAULT_LOGGING_PATH.
 
-    # Rate limits has nested version under "rate_limits" key
-    rate_data = _load_json(rate_limits_path)
+    Raises:
+        ConfigValidationError: On any version mismatch, missing file, or invalid config.
+    """
+    setup = resolve_project_path(setup_path) if setup_path else DEFAULT_SETUP_PATH
+    rate = resolve_project_path(rate_limits_path) if rate_limits_path else DEFAULT_RATE_LIMITS_PATH
+    log = resolve_project_path(logging_path) if logging_path else DEFAULT_LOGGING_PATH
+
+    validate_config_version(setup, "version")
+    validate_config_version(log, "version")
+
+    rate_data = _load_json(rate)
     nested_version = rate_data.get("rate_limits", {}).get("version")
     if nested_version != REQUIRED_CONFIG_VERSION:
-        print(
-            f"ERROR: Nested version mismatch in {rate_limits_path}: "
+        raise ConfigValidationError(
+            f"Version mismatch in {rate}: "
             f"expected {REQUIRED_CONFIG_VERSION}, got {nested_version}"
         )
-        sys.exit(1)
 
-    try:
-        setup_data = _load_json(setup_path)
-        validate_agent_skills(setup_data)
-        validate_pricing(setup_data)
-    except ValueError as exc:
-        print(f"ERROR: Invalid configuration — {exc}")
-        sys.exit(1)
+    setup_data = _load_json(setup)
+    validate_agent_skills(setup_data)
+    validate_pricing(setup_data)

@@ -78,3 +78,31 @@ class TestConfigManagerVersion:
         cfg = ConfigManager(str(path))
         with pytest.raises(KeyError):
             cfg.get_version()
+
+
+class TestConfigManagerPathHandling:
+    """Test CWD-independent path resolution."""
+
+    def test_none_uses_default_setup_path(self) -> None:
+        """No argument uses DEFAULT_SETUP_PATH (the real project config)."""
+        cfg = ConfigManager()
+        assert cfg.path.name == "setup.json"
+        assert cfg.path.is_absolute()
+
+    def test_path_is_absolute_after_init(self, tmp_path: Path) -> None:
+        """Stored path is always absolute regardless of input."""
+        data = {"version": "1.00"}
+        p = tmp_path / "cfg.json"
+        p.write_text(json.dumps(data))
+        cfg = ConfigManager(str(p))
+        assert cfg.path.is_absolute()
+
+    def test_default_config_loads_from_any_cwd(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """ConfigManager() succeeds even when CWD is unrelated to the project."""
+        monkeypatch.chdir(tmp_path)
+        cfg = ConfigManager()  # must find the real setup.json
+        assert cfg.path.name == "setup.json"
+        assert cfg.path.is_absolute()
+        assert cfg.get("version") is not None

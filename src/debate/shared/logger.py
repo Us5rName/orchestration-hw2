@@ -1,13 +1,16 @@
 """LogManager — structured logging with FIFO rotation.
 
 Input: config (dict) — log_directory, max_files, max_lines_per_file, level, format
-Output: configured logger with info/debug/warning/error methods
-Setup: log_directory created if missing; rotation by line count
+Output: configured logger with info/debug/warning/error methods; log_file property
+Setup: log_directory resolved via resolve_project_path (project-root-anchored);
+       directory created if missing; rotation by line count
 """
 
 import logging
 import os
 from pathlib import Path
+
+from .paths import resolve_project_path
 
 
 class _LineRotatingHandler(logging.Handler):
@@ -15,18 +18,18 @@ class _LineRotatingHandler(logging.Handler):
 
     def __init__(
         self,
-        log_dir: str,
+        log_dir: str | Path,
         max_files: int,
         max_lines: int,
         fmt: str,
     ) -> None:
         super().__init__()
-        self.log_dir = Path(log_dir)
+        self.log_dir: Path = resolve_project_path(log_dir)
         self.max_files = max_files
         self.max_lines = max_lines
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.formatter = logging.Formatter(fmt)
-        self._current_file = self.log_dir / "debate.log"
+        self._current_file: Path = self.log_dir / "debate.log"
 
     def _rotate(self) -> None:
         """Shift log files: N-1 → N, N-2 → N-1, ..., 0 → 1, delete oldest."""
@@ -58,7 +61,7 @@ class _LineRotatingHandler(logging.Handler):
         self._check_rotation()
         self._cleanup_old()
         line = self.formatter.format(record)
-        with open(self._current_file, "a", encoding="utf-8") as f:
+        with self._current_file.open("a", encoding="utf-8") as f:
             f.write(line + os.linesep)
 
 
@@ -66,8 +69,8 @@ class LogManager:
     """
     Input: config (dict) — log_directory, max_files, max_lines_per_file,
            level, format
-    Output: logger with info/debug/warning/error methods
-    Setup: log_directory created if missing
+    Output: logger with info/debug/warning/error methods; log_file property
+    Setup: log_directory resolved from project root if relative
     """
 
     def __init__(self, config: dict) -> None:
@@ -81,7 +84,7 @@ class LogManager:
         self.logger.setLevel(getattr(logging, config.get("level", "INFO").upper(), logging.INFO))
         self.logger.handlers.clear()
 
-        handler = _LineRotatingHandler(
+        self._handler = _LineRotatingHandler(
             log_dir=config.get("log_directory", "logs"),
             max_files=config.get("max_files", 20),
             max_lines=config.get("max_lines_per_file", 500),
@@ -90,7 +93,17 @@ class LogManager:
                 "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
             ),
         )
-        self.logger.addHandler(handler)
+        self.logger.addHandler(self._handler)
+
+    @property
+    def log_dir(self) -> Path:
+        """Resolved absolute path to the log directory."""
+        return self._handler.log_dir
+
+    @property
+    def log_file(self) -> Path:
+        """Resolved absolute path to the current log file."""
+        return self._handler._current_file
 
     def info(self, message: str) -> None:
         """Log an info message."""

@@ -24,8 +24,8 @@ class TestConstants:
         assert constants.PROVIDER_ANTHROPIC == "anthropic"
         assert constants.PROVIDER_GEMINI == "gemini"
 
-    def test_default_config_paths(self) -> None:
-        """Default config path constants exist."""
-        assert constants.DEFAULT_CONFIG_PATH == "config/setup.json"
-        assert constants.DEFAULT_RATE_LIMITS_PATH == "config/rate_limits.json"
-        assert constants.DEFAULT_LOGGING_PATH == "config/logging_config.json"
+    def test_path_constants_not_in_constants_module(self) -> None:
+        """Path constants live in shared.paths, not constants."""
+        assert not hasattr(constants, "DEFAULT_CONFIG_PATH")
+        assert not hasattr(constants, "DEFAULT_RATE_LIMITS_PATH")
+        assert not hasattr(constants, "DEFAULT_LOGGING_PATH")

@@ -32,7 +32,7 @@ class TerminalMenu:
             elif choice == "2":
                 self._view_logs()
             elif choice == "3":
-                print("Configuration loaded from config/setup.json")
+                print(f"Configuration loaded from {self.sdk.config.path}")
             elif choice == "4":
                 print("Goodbye!")
                 break

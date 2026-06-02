@@ -15,7 +15,4 @@ PROVIDER_OPENAI = "openai"
 PROVIDER_ANTHROPIC = "anthropic"
 PROVIDER_GEMINI = "gemini"
 
-# Default config paths
-DEFAULT_CONFIG_PATH = "config/setup.json"
-DEFAULT_RATE_LIMITS_PATH = "config/rate_limits.json"
-DEFAULT_LOGGING_PATH = "config/logging_config.json"
+# Default config paths live in debate.shared.paths (cwd-independent)
