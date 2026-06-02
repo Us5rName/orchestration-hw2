@@ -8,6 +8,7 @@ the disconnect where config values are read but never forwarded.
 from unittest.mock import MagicMock, patch
 
 from debate.sdk.sdk import DebateSDK
+from tests.unit.test_sdk.conftest import apply_typed_config
 
 
 class TestTimeoutPropagation:
@@ -22,6 +23,7 @@ class TestTimeoutPropagation:
             patch("debate.sdk.sdk.create_provider", return_value=MagicMock()) as mock_factory,
         ):
             mock_cm.return_value.get = MagicMock(side_effect=mock_get_factory(base_config))
+            apply_typed_config(mock_cm.return_value, base_config)
             sdk = DebateSDK(config_path="config/setup.json")
             sdk._create_agent("judge")
 
@@ -37,6 +39,7 @@ class TestTimeoutPropagation:
             patch("debate.sdk.sdk.create_provider", return_value=MagicMock()),
         ):
             mock_cm.return_value.get = MagicMock(side_effect=mock_get_factory(base_config))
+            apply_typed_config(mock_cm.return_value, base_config)
             sdk = DebateSDK(config_path="config/setup.json")
             agent = sdk._create_agent("judge")
 

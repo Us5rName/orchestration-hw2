@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 from debate.agents.base_agent import AgentBase
 from debate.skills.base_skill import AgentSkill
+from tests.fakes.logger import FakeLogger
 from tests.fakes.providers import FakeProvider
 
 
@@ -35,9 +36,9 @@ def _make_skill(name: str, instructions: str, tool: dict | None = None) -> Agent
 def _agent_with_logger(
     skills: list | None = None,
     responses: list[str] | None = None,
-) -> tuple[ConcreteAgent, MagicMock]:
+) -> tuple[ConcreteAgent, FakeLogger]:
     provider = FakeProvider(responses or ['{"content": "ok"}'])
-    logger = MagicMock()
+    logger = FakeLogger()
     agent = ConcreteAgent(provider, "m", 0.7, 30.0, skills=skills, logger=logger)
     return agent, logger
 
@@ -50,15 +51,13 @@ class TestAgentLogging:
         skill = _make_skill("research-analysis", "Do research.")
         agent, logger = _agent_with_logger(skills=[skill])
         agent.think("prompt")
-        messages = [c[0][0] for c in logger.info.call_args_list]
-        assert any("research-analysis" in m for m in messages)
+        assert any("research-analysis" in m for m in logger.messages)
 
     def test_think_no_log_when_no_skills(self) -> None:
         """think() does not log a skill line when agent has no skills."""
         agent, logger = _agent_with_logger(skills=[])
         agent.think("prompt")
-        messages = [c[0][0] for c in logger.info.call_args_list]
-        assert not any("skills active" in m for m in messages)
+        assert not any("skills active" in m for m in logger.messages)
 
     def test_think_no_crash_when_no_logger(self) -> None:
         """think() does not crash when logger is None."""
@@ -73,8 +72,7 @@ class TestAgentLogging:
         skill.search.return_value = ["result"]
         agent, logger = _agent_with_logger(skills=[skill])
         agent._execute_tool("search", {"query": "test query"})
-        messages = [c[0][0] for c in logger.info.call_args_list]
-        assert any("search" in m and "test query" in m for m in messages)
+        assert any("search" in m and "test query" in m for m in logger.messages)
 
     def test_tool_result_count_logged(self) -> None:
         """_execute_tool logs the number of results returned."""
@@ -82,12 +80,10 @@ class TestAgentLogging:
         skill.search.return_value = ["r1", "r2", "r3"]
         agent, logger = _agent_with_logger(skills=[skill])
         agent._execute_tool("search", {"query": "q"})
-        messages = [c[0][0] for c in logger.info.call_args_list]
-        assert any("3 item(s)" in m for m in messages)
+        assert any("3 item(s)" in m for m in logger.messages)
 
     def test_unknown_tool_logs_no_handler(self) -> None:
         """_execute_tool logs 'no handler' for unknown tools."""
         agent, logger = _agent_with_logger()
         agent._execute_tool("unknown", {})
-        messages = [c[0][0] for c in logger.info.call_args_list]
-        assert any("no handler" in m for m in messages)
+        assert any("no handler" in m for m in logger.messages)
