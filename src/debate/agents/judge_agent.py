@@ -1,17 +1,18 @@
 """JudgeAgent — mediates debate and decides winner.
 
-Skill: evaluates persuasiveness and communication quality,
-NOT factual correctness. Must declare a winner — no ties allowed.
+Skills injected via config; defaults to persuasion-scoring which evaluates
+persuasiveness and communication quality, not factual correctness.
 """
 
+from ..skills.base_skill import AgentSkill
 from .base_agent import AgentBase
 
 
 class JudgeAgent(AgentBase):
     """
-    Input: provider, model, temperature, timeout, topic
+    Input: provider, model, temperature, timeout, topic, skills
     Output: think(prompt) -> dict with verdict, scores, justification
-    Setup: scores persuasiveness, enforces rules, forbids ties
+    Setup: skill instructions injected into system prompt via _build_skill_block()
     """
 
     def __init__(
@@ -21,6 +22,8 @@ class JudgeAgent(AgentBase):
         temperature: float,
         timeout: float,
         topic: str,
+        skills: list[AgentSkill] | None = None,
+        logger: object | None = None,
     ) -> None:
         """Initialize JudgeAgent.
 
@@ -30,8 +33,10 @@ class JudgeAgent(AgentBase):
             temperature: Sampling temperature.
             timeout: Request timeout in seconds.
             topic: The debate topic.
+            skills: Optional list of AgentSkill instances.
+            logger: Optional LogManager for structured logging.
         """
-        super().__init__(provider, model, temperature, timeout)
+        super().__init__(provider, model, temperature, timeout, skills, logger)
         self.topic = topic
 
     @property
@@ -40,13 +45,13 @@ class JudgeAgent(AgentBase):
         return "judge"
 
     def _build_system_prompt(self) -> str:
-        """Build system prompt for judge role.
+        """Build system prompt with injected skill instructions.
 
         Returns:
-            System prompt instructing the agent to mediate and score
-            based on persuasiveness, not factual correctness.
+            System prompt for judging and scoring the debate,
+            with skill block appended when skills are assigned.
         """
-        return (
+        base = (
             "You are the JUDGE in a formal debate. "
             "You do NOT need expertise on the topic. "
             "Your job is to evaluate PERSUASIVENESS, not factual correctness.\n\n"
@@ -63,3 +68,5 @@ class JudgeAgent(AgentBase):
             "- When relaying messages between debaters, forward the argument\n"
             "- Enforce respectful, politically correct language"
         )
+        skill_block = self._build_skill_block()
+        return f"{base}\n\n{skill_block}" if skill_block else base

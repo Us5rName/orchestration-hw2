@@ -1,10 +1,13 @@
-"""Config version validation at startup."""
+"""Config version and skill-role validation at startup."""
 
 import json
 import sys
 from pathlib import Path
 
 from .version import REQUIRED_CONFIG_VERSION
+
+_JUDGE_SKILLS: frozenset[str] = frozenset({"persuasion-scoring"})
+_DEBATER_SKILLS: frozenset[str] = frozenset({"research-analysis", "quality-standards"})
 
 
 def _load_json(path: str) -> dict:
@@ -43,6 +46,31 @@ def validate_config_version(path: str, version_key: str = "version") -> None:
         sys.exit(1)
 
 
+def validate_agent_skills(config: dict) -> None:
+    """Validate skill assignments match agent role semantics.
+
+    Judge may only use judge skills. Pro and Con may only use debater skills.
+
+    Args:
+        config: Parsed setup.json dict.
+
+    Raises:
+        ValueError: If an agent is assigned a skill that does not match its role.
+    """
+    agents = config.get("agents", {})
+
+    judge_skills = set(agents.get("judge", {}).get("skills", []))
+    invalid_judge = judge_skills & _DEBATER_SKILLS
+    if invalid_judge:
+        raise ValueError(f"Judge cannot use debater skills: {sorted(invalid_judge)}")
+
+    for role in ("pro", "con"):
+        skills = set(agents.get(role, {}).get("skills", []))
+        invalid = skills & _JUDGE_SKILLS
+        if invalid:
+            raise ValueError(f"'{role}' agent cannot use judge skills: {sorted(invalid)}")
+
+
 def validate_all_configs(
     setup_path: str = "config/setup.json",
     rate_limits_path: str = "config/rate_limits.json",
@@ -66,4 +94,11 @@ def validate_all_configs(
             f"ERROR: Nested version mismatch in {rate_limits_path}: "
             f"expected {REQUIRED_CONFIG_VERSION}, got {nested_version}"
         )
+        sys.exit(1)
+
+    try:
+        setup_data = _load_json(setup_path)
+        validate_agent_skills(setup_data)
+    except ValueError as exc:
+        print(f"ERROR: Invalid skill configuration — {exc}")
         sys.exit(1)

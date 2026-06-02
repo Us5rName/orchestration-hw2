@@ -100,3 +100,29 @@ class TestSDKGetLogs:
         ):
             result = sdk.get_logs(count=2)
         assert result == ["line2", "line3"]
+
+
+class TestSDKSkillRegistry:
+    """Test that SDK wires skills to agents via registry."""
+
+    def test_sdk_has_skill_registry(self, sdk: DebateSDK) -> None:
+        """SDK initializes a SkillRegistry."""
+        assert sdk._skill_registry is not None
+
+    def test_create_agent_uses_skills_from_config(self, mock_config_data: dict) -> None:
+        """_create_agent resolves skills listed in agent config."""
+        mock_config_data["agents"]["pro"]["skills"] = ["research-analysis"]
+
+        def mock_get(key, default=None):
+            return mock_config_data.get(key, default)
+
+        with patch("debate.sdk.sdk.ConfigManager") as mock_cm, patch(
+            "debate.sdk.sdk.create_provider"
+        ) as mock_prov:
+            mock_cm.return_value.get = MagicMock(side_effect=mock_get)
+            mock_prov.return_value = MagicMock()
+            sdk = DebateSDK(config_path="config/setup.json")
+            agent = sdk._create_agent("pro")
+
+        assert len(agent.skills) == 1
+        assert agent.skills[0].name == "research-analysis"

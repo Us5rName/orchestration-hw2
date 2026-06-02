@@ -22,7 +22,8 @@ def log_agent_response(logger: object | None, agent: str, response: dict) -> Non
     _safe_log(logger, "%s response: %s", agent, content)
     refs = response.get("references", [])
     if refs:
-        _safe_log(logger, "%s references: %s", agent, ", ".join(refs))
+        ref_strs = [r if isinstance(r, str) else str(r) for r in refs]
+        _safe_log(logger, "%s references: %s", agent, ", ".join(ref_strs))
 
 
 def log_verdict(logger: object | None, verdict: dict) -> None:

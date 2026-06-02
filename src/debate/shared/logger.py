@@ -41,7 +41,8 @@ class _LineRotatingHandler(logging.Handler):
     def _check_rotation(self) -> None:
         """Rotate if current file exceeds max_lines."""
         if self._current_file.exists():
-            line_count = sum(1 for _ in self._current_file.open())
+            with self._current_file.open(encoding="utf-8") as f:
+                line_count = sum(1 for _ in f)
             if line_count >= self.max_lines:
                 self._rotate()
 

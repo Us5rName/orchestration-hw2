@@ -5,7 +5,7 @@ Output: list of result dicts with title, href, body
 Setup: duckduckgo-search SDK, no API key needed
 """
 
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 
 class SearchService:
