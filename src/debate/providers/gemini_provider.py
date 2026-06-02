@@ -73,6 +73,18 @@ class GeminiProvider(LLMProvider):
                 contents=current_contents,
                 config=config,
             )
+            match getattr(response, "usage_metadata", None):
+                case None:
+                    self._record_unavailable_usage()
+                case {"prompt_token_count": int(pt), "candidates_token_count": int(ct)}:
+                    self._record_usage(pt, ct)
+                case meta:
+                    pt = getattr(meta, "prompt_token_count", None)
+                    ct = getattr(meta, "candidates_token_count", None)
+                    if isinstance(pt, int) and isinstance(ct, int):
+                        self._record_usage(pt, ct)
+                    else:
+                        self._record_unavailable_usage()
             part = response.candidates[0].content.parts[0]
             fc = getattr(part, "function_call", None)
 
