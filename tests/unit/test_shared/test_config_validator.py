@@ -54,8 +54,14 @@ class TestValidateAllConfigs:
 
     def test_validates_all_files(self, tmp_path: Path) -> None:
         """All config files are validated."""
+        pricing = {
+            "unit": "per_1m_tokens",
+            "judge": {"input": 0.15, "output": 0.60},
+            "pro": {"input": 0.15, "output": 0.60},
+            "con": {"input": 0.15, "output": 0.60},
+        }
         setup = tmp_path / "setup.json"
-        setup.write_text(json.dumps({"version": "1.00"}))
+        setup.write_text(json.dumps({"version": "1.00", "pricing": pricing}))
         logging_cfg = tmp_path / "logging.json"
         logging_cfg.write_text(json.dumps({"version": "1.00"}))
         rate = tmp_path / "rate.json"
