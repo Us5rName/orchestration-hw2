@@ -13,6 +13,8 @@ from debate.shared.paths import (
     LOGS_DIR,
     PROJECT_ROOT,
     ProjectPathError,
+    require_dir,
+    require_file,
     resolve_project_path,
 )
 
@@ -95,6 +97,46 @@ class TestResolveProjectPath:
         monkeypatch.chdir(tmp_path)
         resolved = resolve_project_path("config/setup.json")
         assert resolved == PROJECT_ROOT / "config" / "setup.json"
+
+
+class TestRequireFile:
+    """Test require_file helper."""
+
+    def test_existing_file_returned(self) -> None:
+        """require_file returns path if it exists."""
+        result = require_file(DEFAULT_SETUP_PATH)
+        assert result == DEFAULT_SETUP_PATH
+        assert result.is_file()
+
+    def test_missing_file_raises(self, tmp_path: Path) -> None:
+        """require_file raises ProjectPathError if file is absent."""
+        with pytest.raises(ProjectPathError, match="Required file not found"):
+            require_file(tmp_path / "nonexistent.json")
+
+    def test_directory_raises(self) -> None:
+        """require_file raises ProjectPathError for a directory path."""
+        with pytest.raises(ProjectPathError, match="Required file not found"):
+            require_file(CONFIG_DIR)
+
+
+class TestRequireDir:
+    """Test require_dir helper."""
+
+    def test_existing_dir_returned(self) -> None:
+        """require_dir returns path if it exists."""
+        result = require_dir(CONFIG_DIR)
+        assert result == CONFIG_DIR
+        assert result.is_dir()
+
+    def test_missing_dir_raises(self, tmp_path: Path) -> None:
+        """require_dir raises ProjectPathError if directory is absent."""
+        with pytest.raises(ProjectPathError, match="Required directory not found"):
+            require_dir(tmp_path / "nonexistent")
+
+    def test_file_raises(self) -> None:
+        """require_dir raises ProjectPathError for a file path."""
+        with pytest.raises(ProjectPathError, match="Required directory not found"):
+            require_dir(DEFAULT_SETUP_PATH)
 
 
 class TestProjectPathError:
