@@ -15,6 +15,8 @@ from ..shared.config import ConfigManager
 from ..shared.gatekeeper import ApiGatekeeper, RateLimitConfig
 from ..shared.logger import LogManager
 from ..shared.watchdog import Watchdog
+from ..skills.registry import SkillRegistry, default_registry
+from .agent_factory import create_agent
 from .provider_factory import create_provider
 
 
@@ -32,6 +34,7 @@ class DebateSDK:
             config_path: Path to the JSON config file.
         """
         self.config = ConfigManager(config_path)
+        self._skill_registry: SkillRegistry = default_registry()
         self._init_logger()
         self._init_gatekeeper()
         self._init_watchdog()
@@ -59,43 +62,20 @@ class DebateSDK:
         self.watchdog = Watchdog(check_interval=1.0, timeout=30.0)
 
     def _create_agent(self, role: str) -> JudgeAgent | ProAgent | ConAgent:
-        """Create an agent from config.
+        """Create an agent with resolved skills from config.
 
         Args:
             role: Agent role ('judge', 'pro', 'con').
 
         Returns:
-            Configured agent instance.
+            Configured agent instance with skills attached.
         """
         agent_cfg = self.config.get("agents", {}).get(role, {})
         timeout = self.config.get("debate", {}).get("request_timeout_seconds", 60)
-        # Pass timeout to provider so API calls use the configured value
         provider_cfg = {**agent_cfg, "timeout": timeout}
-        provider = create_provider(
-            agent_cfg.get("provider", "openai"),
-            provider_cfg,
-        )
+        provider = create_provider(agent_cfg.get("provider", "openai"), provider_cfg)
         topic = self.config.get("debate", {}).get("topic", "")
-
-        if role == "judge":
-            return JudgeAgent(
-                provider,
-                agent_cfg.get("model", ""),
-                agent_cfg.get("temperature", 0.3),
-                timeout,
-                topic,
-            )
-        if role == "pro":
-            return ProAgent(
-                provider,
-                agent_cfg.get("model", ""),
-                agent_cfg.get("temperature", 0.7),
-                timeout,
-                topic,
-            )
-        return ConAgent(
-            provider, agent_cfg.get("model", ""), agent_cfg.get("temperature", 0.7), timeout, topic
-        )
+        return create_agent(role, agent_cfg, provider, topic, timeout, self._skill_registry)
 
     def _create_orchestrator(self) -> DebateOrchestrator:
         """Create orchestrator with all agents.
