@@ -140,3 +140,58 @@ class TestAgentBaseSkills:
         """_execute_tool returns empty string for unknown tool names."""
         agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0)
         assert agent._execute_tool("unknown_tool", {}) == ""
+
+
+class TestAgentLogging:
+    """Test that AgentBase emits structured log entries."""
+
+    def _agent_with_logger(self, mock_provider: MagicMock, skills=None) -> tuple:
+        logger = MagicMock()
+        agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0, skills=skills, logger=logger)
+        return agent, logger
+
+    def test_think_logs_active_skills(self, mock_provider: MagicMock) -> None:
+        """think() logs the names of active skills before the LLM call."""
+        skill = _make_skill("research-analysis", "Do research.")
+        agent, logger = self._agent_with_logger(mock_provider, skills=[skill])
+        agent.think("prompt")
+        messages = [c[0][0] for c in logger.info.call_args_list]
+        assert any("research-analysis" in m for m in messages)
+
+    def test_think_no_log_when_no_skills(self, mock_provider: MagicMock) -> None:
+        """think() does not log skill line when agent has no skills."""
+        agent, logger = self._agent_with_logger(mock_provider, skills=[])
+        agent.think("prompt")
+        messages = [c[0][0] for c in logger.info.call_args_list]
+        assert not any("skills active" in m for m in messages)
+
+    def test_think_no_log_when_no_logger(self, mock_provider: MagicMock) -> None:
+        """think() does not crash when logger is None."""
+        skill = _make_skill("research-analysis", "Do research.")
+        agent = ConcreteAgent(mock_provider, "m", 0.7, 30.0, skills=[skill])
+        agent.think("prompt")  # must not raise
+
+    def test_tool_call_logged(self, mock_provider: MagicMock) -> None:
+        """_execute_tool logs the tool name and query."""
+        skill = _make_skill("research-analysis", "Do research.")
+        skill.search.return_value = ["result"]
+        agent, logger = self._agent_with_logger(mock_provider, skills=[skill])
+        agent._execute_tool("search", {"query": "test query"})
+        messages = [c[0][0] for c in logger.info.call_args_list]
+        assert any("search" in m and "test query" in m for m in messages)
+
+    def test_tool_result_count_logged(self, mock_provider: MagicMock) -> None:
+        """_execute_tool logs the number of results returned."""
+        skill = _make_skill("research-analysis", "Do research.")
+        skill.search.return_value = ["r1", "r2", "r3"]
+        agent, logger = self._agent_with_logger(mock_provider, skills=[skill])
+        agent._execute_tool("search", {"query": "q"})
+        messages = [c[0][0] for c in logger.info.call_args_list]
+        assert any("3 item(s)" in m for m in messages)
+
+    def test_unknown_tool_logs_no_handler(self, mock_provider: MagicMock) -> None:
+        """_execute_tool logs 'no handler' for unknown tools."""
+        agent, logger = self._agent_with_logger(mock_provider)
+        agent._execute_tool("unknown", {})
+        messages = [c[0][0] for c in logger.info.call_args_list]
+        assert any("no handler" in m for m in messages)

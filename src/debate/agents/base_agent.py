@@ -29,6 +29,7 @@ class AgentBase(ABC):
         temperature: float,
         timeout: float,
         skills: list[AgentSkill] | None = None,
+        logger: object | None = None,
     ) -> None:
         """Initialize agent with LLM provider, settings, and skills.
 
@@ -38,12 +39,14 @@ class AgentBase(ABC):
             temperature: Sampling temperature.
             timeout: Request timeout in seconds.
             skills: Optional list of AgentSkill instances to compose.
+            logger: Optional LogManager for structured logging.
         """
         self.provider = provider
         self.model = model
         self.temperature = temperature
         self.timeout = timeout
         self.skills = skills or []
+        self._logger = logger
 
     @property
     @abstractmethod
@@ -83,11 +86,17 @@ class AgentBase(ABC):
         Returns:
             Tool result as a string; empty string if no handler found.
         """
+        query = args.get("query", "")
+        self._log("%s tool call: %s(query=%r)", self.role.upper(), name, query)
         if name == "search":
             for skill in self.skills:
-                results = skill.search(args.get("query", ""))
+                results = skill.search(query)
                 if results:
+                    self._log(
+                        "%s tool result: %d item(s) returned", self.role.upper(), len(results)
+                    )
                     return "\n".join(results)
+        self._log("%s tool result: no handler for '%s'", self.role.upper(), name)
         return ""
 
     def think(self, user_prompt: str) -> dict:
@@ -102,6 +111,12 @@ class AgentBase(ABC):
         Returns:
             Dict with agent role, content, and metadata.
         """
+        if self.skills:
+            self._log(
+                "%s skills active: %s",
+                self.role.upper(),
+                ", ".join(s.name for s in self.skills),
+            )
         messages = [
             {"role": "system", "content": self._build_system_prompt()},
             {"role": "user", "content": user_prompt},
@@ -112,6 +127,11 @@ class AgentBase(ABC):
         response = self._parse_response(raw)
         response["agent"] = self.role
         return response
+
+    def _log(self, message: str, *args: object) -> None:
+        """Emit an info log if a logger is configured."""
+        if self._logger is not None:
+            self._logger.info(message % args)
 
     def _parse_response(self, raw: str) -> dict:
         """Parse raw LLM output into a structured dict.
