@@ -382,6 +382,36 @@
 
 ---
 
+### Prompt 16: Phase 10 — Usage & Cost Tracking
+**User**: "Mission: implement full usage and cost tracking across all providers and agents."
+
+**Context**: Phase 10 — full token tracking pipeline across OpenAI, Anthropic, Gemini; pricing config; per-round logs.
+
+**Skills Applied**: costs-pricing, final-checklist
+
+**Output**:
+- `UsageRecord` dataclass + `build_from_delta()` factory — delta-snapshot pattern for per-turn token attribution
+- Match/case usage extraction in all 3 provider classes — handles dict, typed SDK object, and None responses
+- `CostCalculator` — pure stateless math module; supports per_1m_tokens and per_1k_tokens units
+- Pricing config in `config/setup.json`; `validate_pricing()` added to config_validator startup
+- `orchestrator_logging.py` — `log_round_cost` and `log_debate_cost` helpers
+- `DebateOrchestrator` — captures usage snapshots before each agent call, emits per-round and debate-level cost summaries
+- `DebateSDK` — propagates `pricing` config to orchestrator
+- 230 tests, 99% coverage, 0 Ruff violations
+
+**Key Design**:
+- Delta-snapshot pattern: `get_usage()` before and after each agent call; delta correctly handles tool-call loops where the provider is called multiple times per agent turn
+- Match/case for usage extraction: Python structural pattern matching handles both raw SDK objects (typed attrs) and dict-like responses uniformly; MagicMock falls safely to the `else` branch in tests
+- `available=False` flag: records with no usage data are preserved in the ledger so downstream aggregation stays correct without crashing or inventing tokens
+- Pricing per role in config (not hardcoded): allows per-agent cost differentiation when different models are used
+
+**Lessons**:
+- `int(MagicMock())` returns 1 in Python — can mask delta bugs in tests; explicit `SimpleNamespace` fixtures are more trustworthy for usage branch tests
+- Ruff B027 fires on empty methods in ABC subclasses; a `return  # concrete no-op` comment body silences it correctly
+- Keep `build_from_delta` in `usage_record.py` (not the orchestrator) — separates the delta math from orchestration and makes it testable in isolation
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement

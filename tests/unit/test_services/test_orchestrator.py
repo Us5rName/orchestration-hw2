@@ -141,3 +141,31 @@ class TestOrchestratorRun:
         result = orchestrator.run()
         assert result["winner"] == "pro"
         assert len(orchestrator.state.history) == 6  # 2 args per round * 3 rounds
+
+    def test_run_result_includes_cost_summary(self, orchestrator: DebateOrchestrator) -> None:
+        """run() result includes cost_summary with expected keys."""
+        orchestrator.pro.think.return_value = {"content": "Pro", "references": []}
+        orchestrator.con.think.return_value = {"content": "Con", "references": []}
+        orchestrator.judge.think.return_value = {
+            "winner": "pro", "pro_score": 80, "con_score": 70, "justification": "ok",
+        }
+        result = orchestrator.run()
+        assert "cost_summary" in result
+        summary = result["cost_summary"]
+        assert "total_tokens" in summary
+        assert "total_cost_usd" in summary
+        assert "by_role" in summary
+
+
+class TestOrchestratorRunRoundCost:
+    """Test run_round includes round cost data."""
+
+    def test_run_round_includes_round_cost(self, orchestrator: DebateOrchestrator) -> None:
+        """run_round() result includes round_cost dict."""
+        orchestrator.pro.think.return_value = {"content": "Pro", "references": []}
+        orchestrator.con.think.return_value = {"content": "Con", "references": []}
+        result = orchestrator.run_round()
+        assert "round_cost" in result
+        cost = result["round_cost"]
+        assert "total_cost_usd" in cost
+        assert "breakdown" in cost

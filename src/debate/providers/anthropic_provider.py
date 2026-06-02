@@ -80,6 +80,18 @@ class AnthropicProvider(LLMProvider):
                 kwargs["tools"] = anthropic_tools
 
             response = self._client.messages.create(**kwargs)
+            match response.usage:
+                case None:
+                    self._record_unavailable_usage()
+                case {"input_tokens": int(it), "output_tokens": int(ot)}:
+                    self._record_usage(it, ot)
+                case usage_obj:
+                    it = getattr(usage_obj, "input_tokens", None)
+                    ot = getattr(usage_obj, "output_tokens", None)
+                    if isinstance(it, int) and isinstance(ot, int):
+                        self._record_usage(it, ot)
+                    else:
+                        self._record_unavailable_usage()
 
             if response.stop_reason != "tool_use" or not tool_executor:
                 return response.content[0].text or ""

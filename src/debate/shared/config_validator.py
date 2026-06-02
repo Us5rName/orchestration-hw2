@@ -8,6 +8,8 @@ from .version import REQUIRED_CONFIG_VERSION
 
 _JUDGE_SKILLS: frozenset[str] = frozenset({"persuasion-scoring"})
 _DEBATER_SKILLS: frozenset[str] = frozenset({"research-analysis", "quality-standards"})
+_VALID_PRICING_UNITS: frozenset[str] = frozenset({"per_1m_tokens", "per_1k_tokens"})
+_PRICING_ROLES: frozenset[str] = frozenset({"judge", "pro", "con"})
 
 
 def _load_json(path: str) -> dict:
@@ -44,6 +46,34 @@ def validate_config_version(path: str, version_key: str = "version") -> None:
             f"expected {REQUIRED_CONFIG_VERSION}, got {file_version}"
         )
         sys.exit(1)
+
+
+def validate_pricing(config: dict) -> None:
+    """Validate that the pricing section has required structure.
+
+    Args:
+        config: Parsed setup.json dict.
+
+    Raises:
+        ValueError: If pricing is missing, has an unsupported unit, or any
+            role is missing input/output prices or uses non-numeric values.
+    """
+    pricing = config.get("pricing")
+    if pricing is None:
+        raise ValueError("Missing 'pricing' section in config")
+    unit = pricing.get("unit")
+    if unit not in _VALID_PRICING_UNITS:
+        raise ValueError(
+            f"Invalid pricing unit {unit!r}; expected one of {sorted(_VALID_PRICING_UNITS)}"
+        )
+    for role in _PRICING_ROLES:
+        role_cfg = pricing.get(role)
+        if not role_cfg:
+            raise ValueError(f"Missing pricing for role {role!r}")
+        for key in ("input", "output"):
+            val = role_cfg.get(key)
+            if val is None or not isinstance(val, (int, float)):
+                raise ValueError(f"Invalid pricing[{role!r}][{key!r}]: {val!r}")
 
 
 def validate_agent_skills(config: dict) -> None:
@@ -99,6 +129,7 @@ def validate_all_configs(
     try:
         setup_data = _load_json(setup_path)
         validate_agent_skills(setup_data)
+        validate_pricing(setup_data)
     except ValueError as exc:
-        print(f"ERROR: Invalid skill configuration — {exc}")
+        print(f"ERROR: Invalid configuration — {exc}")
         sys.exit(1)

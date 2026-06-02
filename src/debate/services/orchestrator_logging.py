@@ -53,6 +53,47 @@ def log_debate_complete(
     )
 
 
+def log_round_cost(logger: object | None, summary: dict) -> None:
+    """Log per-agent token usage and cost for one round."""
+    rn = summary.get("round", "?")
+    for item in summary.get("breakdown", []):
+        if item["available"]:
+            _safe_log(
+                logger,
+                "Round %s cost | %s | %s | %s | in=%d out=%d total=%d | $%.6f",
+                rn,
+                item["role"],
+                item["provider"],
+                item["model"],
+                item["input_tokens"],
+                item["output_tokens"],
+                item["total_tokens"],
+                item["cost_usd"],
+            )
+        else:
+            _safe_log(logger, "Round %s cost | %s | usage unavailable", rn, item["role"])
+    _safe_log(logger, "Round %s total cost: $%.6f", rn, summary.get("total_cost_usd", 0.0))
+
+
+def log_debate_cost(logger: object | None, summary: dict) -> None:
+    """Log total token usage and cost for the entire debate."""
+    _safe_log(
+        logger,
+        "Debate cost summary | total_tokens=%d | total_cost=$%.6f",
+        summary.get("total_tokens", 0),
+        summary.get("total_cost_usd", 0.0),
+    )
+    for role, data in summary.get("by_role", {}).items():
+        _safe_log(
+            logger,
+            "  %s | in=%d out=%d | $%.6f",
+            role,
+            data["input_tokens"],
+            data["output_tokens"],
+            data["cost_usd"],
+        )
+
+
 def _safe_log(logger: object | None, message: str, *args: object) -> None:
     """Log a message only if a logger is configured."""
     if logger is not None:

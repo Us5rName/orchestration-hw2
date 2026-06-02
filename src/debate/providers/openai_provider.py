@@ -77,6 +77,18 @@ class OpenAIProvider(LLMProvider):
                 kwargs["tools"] = openai_tools
 
             response = self._client.chat.completions.create(**kwargs)
+            match response.usage:
+                case None:
+                    self._record_unavailable_usage()
+                case {"prompt_tokens": int(pt), "completion_tokens": int(ct)}:
+                    self._record_usage(pt, ct)
+                case usage_obj:
+                    pt = getattr(usage_obj, "prompt_tokens", None)
+                    ct = getattr(usage_obj, "completion_tokens", None)
+                    if isinstance(pt, int) and isinstance(ct, int):
+                        self._record_usage(pt, ct)
+                    else:
+                        self._record_unavailable_usage()
             msg = response.choices[0].message
 
             if response.choices[0].finish_reason != "tool_calls" or not tool_executor:
