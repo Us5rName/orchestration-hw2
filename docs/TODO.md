@@ -102,12 +102,19 @@
 
 ## Phase 11 — Architecture Refactor and Test Consolidation
 
-### Branch 1 — test/refactor-harness-and-duplicates
-- [ ] Build reliable typed fakes for providers and agents (replace MagicMock-heavy tests)
-- [ ] Consolidate duplicated provider tests into contract-style tests where possible
-- [ ] Split test files that exceed the 150-line limit into focused units
-- [ ] Replace direct abstract-class instantiation tests with `inspect`-based abstractness tests
-- [ ] Keep or improve meaningful coverage; do not delete tests just to reduce count
+### Branch 1 — test/refactor-harness-and-duplicates ✅
+- [x] Add `tests/fakes/providers.py` — `FakeProvider` (typed, scripted, replaces bare `MagicMock`)
+- [x] Add `tests/fakes/agents.py` — `ScriptedAgent` (typed, deterministic `think()`)
+- [x] Replace `type: ignore[abstract]` with `inspect.isabstract()` in `test_base_provider.py` and `test_base_skill.py`
+- [x] Add `tests/unit/test_providers/contract.py` — shared `assert_base_attrs`, `assert_usage_zero`, `assert_usage_recorded` helpers; all 3 vendor files use them
+- [x] Split `test_base_agent.py` (157 → 113 code lines) — `TestAgentLogging` moved to `test_base_agent_logging.py` (74 lines); `FakeProvider` replaces bare `MagicMock` fixture
+- [x] Refactor `test_orchestrator.py` — `ScriptedAgent` replaces bare `MagicMock` agents; new `TestOrchestratorArchitecture` class with 2 passing + 3 xfail arch-intent tests
+- [x] Refactor `tests/integration/test_debate_flow.py` — `ScriptedAgent` replaces bare `MagicMock`; removed duplicated fixture definitions
+- **Result**: 264 passed · 3 xfailed · 98.62% coverage · 0 Ruff violations
+- **xfail tests (intentional)**:
+  - `test_judge_tie_is_rejected` — Branch 4 will enforce tie detection
+  - `test_invalid_agent_output_raises` — Branch 4 will validate agent output
+  - `test_winner_must_be_pro_or_con` — Branch 5 will enforce winner validation
 
 ### Branch 2 — refactor/typed-config-sdk-boundary
 - [ ] Introduce typed config section dataclasses or models (DebateConfig, AgentConfig, GatekeeperConfig, etc.)

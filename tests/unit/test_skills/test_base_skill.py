@@ -2,8 +2,6 @@
 
 import inspect
 
-import pytest
-
 from debate.skills.base_skill import AgentSkill
 
 

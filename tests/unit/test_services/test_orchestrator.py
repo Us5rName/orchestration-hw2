@@ -13,7 +13,6 @@ import pytest
 from debate.services.orchestrator import DebateOrchestrator
 from tests.fakes.agents import ScriptedAgent
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
