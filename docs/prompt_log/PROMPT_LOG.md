@@ -514,6 +514,51 @@ changes accumulate.
 
 ---
 
+### Session — Final Submission Readiness Planning and Issue Alignment (2026-06-03)
+**User**: `/plan` command followed by execution of `chore/issue-and-doc-sync-plan` branch.
+
+**Context**: Project-wide planning synchronization and final submission readiness alignment.
+All original development phases and the typed-boundaries quality gate were complete.
+The goal was to establish a verified baseline, create a clean release-readiness issue set, link
+development branches, and align all documentation with the Final Submission Readiness Roadmap.
+
+**Branches**: `chore/issue-and-doc-sync-plan`, `chore/final-submission-polish-plan`
+(documentation and issue management only — no source code changes)
+
+**Verified Baseline at Time of Alignment**:
+- `uv run ruff check .` — import-order formatting gate pending (issue #24)
+- `uv run pytest -q` — **264 passed, 3 xfailed** · structured output contract enforcement pending (#26)
+- Coverage — **97.38%** (well above 85% threshold)
+- `config/setup_example.json` — configuration consistency check pending (#25)
+- Python 150-line rule — maintainability pass pending (#29)
+- Runtime safety controls — verification pass pending (#28)
+
+**Release-Readiness Issues Created**:
+- #24 — release: pass final code quality gate (`fix/ruff-and-config-example`)
+- #25 — release: complete configuration consistency check (same branch)
+- #26 — release: enforce structured output contracts (`refactor/structured-output-contracts`)
+- #27 — release: verify parent-controlled debate policy (`refactor/parent-controlled-policy`)
+- #28 — release: verify runtime safety controls (`refactor/runtime-safety-controls`)
+- #29 — release: satisfy 150-line maintainability rule (`refactor/line-limit-split`)
+- #30 — release: complete final submission validation (`chore/final-submission-validation`)
+- #18, #20 updated — developer guide and 5-round example (`docs/developer-guide-and-example`)
+
+**Development Branches Linked**: All seven release-readiness branches linked to their respective issues via GitHub Development panel.
+
+**Documentation Updated**:
+- `docs/TODO.md` — restructured with Current Verified Status, Completed Work Log, Final Submission
+  Readiness Roadmap, GitHub Issue Mapping, Final Submission Checklist, Deferred Future Work
+- `docs/PLAN.md` — refactor rationale section reframed as Final Submission Readiness Roadmap
+- `README.md` — Tests & Quality section updated to reflect baseline with pending final validation;
+  architecture note updated to accurately describe ApiGatekeeper scope
+
+**Key Decisions**:
+- ProviderResult typed return is deferred as future work — current string-return with delta-snapshot is correct and tested
+- Runtime safety controls will be verified or scoped accurately in the dedicated readiness branch (#28)
+- README final metrics are not updated until all commands are confirmed green in the final validation branch (#30)
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement

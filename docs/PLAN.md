@@ -362,51 +362,61 @@ skills-test/
 └── src/main.py
 ```
 
-## Phase 11 — Architecture Refactor Plan
+## Final Submission Readiness Roadmap
 
-### Why tests are refactored before production code
+The following release-quality gates bring the system to final submission standard. Each gate
+addresses a specific quality dimension with explicit acceptance criteria and linked GitHub issues.
 
-Tests are the specification. Before restructuring production code we must ensure the test suite
-accurately describes the target architecture. If we refactor production code first, the existing
-MagicMock-heavy tests will pass without actually verifying the new contracts — the mocks are too
-permissive. Refactoring the test harness first (Branch 1) means every subsequent production
-change is validated by tests that reflect the intended design, not just tests that happen to pass.
+### Typed Boundaries (Completed)
 
-### Why provider contracts, typed config boundaries, and structured outputs are core architecture
+The system establishes three typed boundaries that make each layer independently verifiable:
 
-Right now the system has three loosely-typed boundaries:
+1. **Config boundary**: `ConfigManager` exposes typed property accessors (`debate_config`,
+   `agent_config(role)`, `pricing_config`, etc.). Callers receive typed dataclasses, not raw dicts.
+   The schema is encoded once and is statically verifiable throughout the codebase.
 
-1. **Config boundary**: `ConfigManager.get()` returns raw dicts; callers do `.get("key", default)`
-   everywhere, spreading knowledge of the config schema across the codebase. A typed config
-   model (Branch 2) encodes the schema once and makes every caller statically verifiable.
+2. **Provider boundary**: Each provider returns a string response and accumulates usage counters
+   via a delta-snapshot pattern. The `LLMProvider` interface is abstract; vendor-specific SDK
+   details are isolated inside each provider's `_chat()` method. A `ProviderResult` typed return
+   is documented as a future improvement (see `docs/TODO.md — Deferred Future Work`).
 
-2. **Provider boundary**: each provider returns a raw string and updates mutable internal counters.
-   A `ProviderResult` contract (Branch 3) means orchestration code never needs to know which
-   provider produced the result, and usage accounting is no longer side-effectful.
+3. **Agent output boundary**: Agents return dicts from LLM responses. The structured output
+   contract enforcement gate (#26) makes invalid or edge-case responses a hard, early failure.
 
-3. **Agent output boundary**: agents return dicts from `json.loads()`. Nothing validates that the
-   winner field exists, that scores are integers, or that a tie was not returned. Structured output
-   schemas (Branch 4) make invalid agent responses a hard, early failure rather than a silent
-   downstream bug.
+### Structured Output Contract Enforcement (Issue #26)
 
-These three are architecture work, not polish — they determine how trustworthy the system is at
-runtime and how safely it can be extended.
+Agent and judge outputs will be validated at the orchestrator boundary. Invalid JSON, missing
+required fields, equal scores, or out-of-range winner values will produce explicit errors before
+propagation. This gate converts the existing validation intent tests from expected-failure to
+passing status.
 
-### Why the parent/judge must be the only communication router
+### Parent-Controlled Debate Policy Verification (Issue #27)
 
-The homework requirement and ADR-003 both state that all messages flow through the Judge.
-Currently this is enforced by convention (the orchestrator calls agents in the right order) rather
-than by structure (agents cannot call each other). Branch 5 makes the invariant structural:
-`ProAgent` and `ConAgent` will have no reference to each other, and the communication policy
-(`DebatePolicy`) will be an explicit, testable object rather than implicit orchestrator behaviour.
-This also makes the system easier to extend: new policies (e.g. rebuttals, mediator interventions)
-can be added without modifying agent classes.
+The course requirement states all communication routes through the parent/judge. This gate adds
+explicit structural verification: Pro and Con agents hold no direct references to each other; all
+message flow is mediated by the orchestrator; turn order and winner constraints are tested
+directly. This makes the ADR-003 invariant testable, not just conventional.
 
-### Why gatekeeper/watchdog infrastructure must be real or honestly documented
+### Runtime Safety Control Verification (Issue #28)
 
-`ApiGatekeeper` and `Watchdog` are constructed and listed in the architecture diagrams, but
-inspection of the runtime path shows they are not in the hot path of actual API calls or the
-debate loop. This is a correctness gap: the system claims rate limiting and keep-alive monitoring
-that does not actually fire. Branch 6 resolves this by either wiring them into the real path
-(preferred) or documenting their current status as "future work" with explicit TODOs, so the
-architecture documentation is honest about what the system actually does.
+`ApiGatekeeper` provides rate limiting, retry logic, and call queuing. `Watchdog` provides
+keep-alive monitoring. This gate verifies each control's behavior at the appropriate execution
+point, or documents its precise scope in the architecture if the full wiring is deferred to a
+future release. README and PLAN documentation will accurately reflect the verified state.
+
+### Configuration Consistency Check (Issue #25)
+
+`config/setup_example.json` will include all sections present in `config/setup.json`, including
+pricing. A user copying the example as a starting point will pass configuration validation
+without modifications.
+
+### Maintainability Gate (Issue #29)
+
+All Python source and test files will satisfy the course's 150-line rule (non-blank, non-comment
+lines). Files currently at the boundary will be split by semantic concern, not artificially
+compressed.
+
+### Final Validation (Issue #30)
+
+After all readiness branches are merged, the final validation branch runs the complete quality
+checklist: lint, tests, coverage, smoke test, documentation accuracy, and artifact hygiene.
