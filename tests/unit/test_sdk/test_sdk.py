@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from debate.sdk.sdk import DebateSDK
+from debate.shared.paths import DEFAULT_SETUP_PATH
 from tests.unit.test_sdk.conftest import apply_typed_config
 
 
@@ -47,7 +48,7 @@ def sdk(mock_config_data: dict) -> DebateSDK:
     with patch("debate.sdk.sdk.ConfigManager") as mock_cm:
         mock_cm.return_value.get = MagicMock(side_effect=mock_get)
         apply_typed_config(mock_cm.return_value, mock_config_data)
-        return DebateSDK(config_path="config/setup.json")
+        return DebateSDK(config_path=DEFAULT_SETUP_PATH)
 
 
 class TestSDKInit:
@@ -124,7 +125,7 @@ class TestSDKSkillRegistry:
             mock_cm.return_value.get = MagicMock(side_effect=mock_get)
             apply_typed_config(mock_cm.return_value, mock_config_data)
             mock_prov.return_value = MagicMock()
-            sdk = DebateSDK(config_path="config/setup.json")
+            sdk = DebateSDK(config_path=DEFAULT_SETUP_PATH)
             agent = sdk._create_agent("pro")
 
         assert len(agent.skills) == 1
