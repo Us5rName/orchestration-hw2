@@ -6,13 +6,13 @@
 
 | Check | Result |
 |-------|--------|
-| `uv run ruff check .` | Pending — import-order formatting gate in progress (issue #24) |
-| `uv run pytest -q` | Baseline: 264 passed · 3 xfailed · final validation pending |
-| Coverage (`--cov=src`) | Baseline: 97.38% · final validation pending |
-| Structured output contracts | Enforcement planned — issue #26 |
+| `uv run ruff check .` | Passing — zero violations |
+| `uv run pytest -q` | 302 passed · 0 xfailed · final validation pending |
+| Coverage (`--cov=src`) | 97.31% · final validation pending |
+| Structured output contracts | **Enforced** — `AgentResponse` + `JudgeDecision` validated · issue #26 ✓ |
 | Parent-controlled policy | Verification planned — issue #27 |
 | Runtime safety controls | Verification planned — issue #28 |
-| `config/setup_example.json` | Configuration consistency check in progress — issue #25 |
+| `config/setup_example.json` | Completed — issue #25 ✓ |
 | Python 150-line rule | Maintainability pass in progress — issue #29 |
 
 ---
@@ -127,7 +127,7 @@
 | #20 | docs: add real 5-round debate example | `docs/developer-guide-and-example` | open |
 | #24 | release: pass final code quality gate | `fix/ruff-and-config-example` | open |
 | #25 | release: complete configuration consistency check | `fix/ruff-and-config-example` | open |
-| #26 | release: enforce structured output contracts | `refactor/structured-output-contracts` | open |
+| #26 | release: enforce structured output contracts | `refactor/structured-output-contracts` | **completed** ✓ |
 | #27 | release: verify parent-controlled debate policy | `refactor/parent-controlled-policy` | open |
 | #28 | release: verify runtime safety controls | `refactor/runtime-safety-controls` | open |
 | #29 | release: satisfy 150-line maintainability rule | `refactor/line-limit-split` | open |
@@ -141,13 +141,14 @@
 
 - [ ] `uv run ruff check .` passes with zero violations
 - [ ] `uv run pytest -q` passes
-- [ ] Zero xfailed tests remain
+- [x] Zero xfailed tests remain
 - [ ] Coverage remains above 85%
 - [ ] `config/setup_example.json` includes pricing and passes validation
-- [ ] Structured output contracts are enforced (winner, scores, JSON schema)
+- [x] Structured output contracts are enforced (winner, scores, JSON schema)
 - [ ] Parent-controlled policy is verified by passing tests
 - [ ] Runtime safety controls are verified or scoped accurately in documentation
 - [ ] All Python files satisfy the 150-line maintainability rule
+  - Note: `orchestrator.py` and `test_orchestrator.py` remain scheduled for `refactor/line-limit-split` (#29). The `refactor/structured-output-contracts` branch intentionally did not perform the line-limit refactor to keep the structured-output PR focused.
 - [ ] README metrics match final command outputs
 - [ ] `docs/prompt_log/PROMPT_LOG.md` is updated
 - [ ] No secrets or generated artifacts are tracked in git

@@ -173,14 +173,10 @@ class TestOrchestratorArchitecture:
         assert con._idx == 2
         assert judge._idx == 1
 
-    @pytest.mark.xfail(
-        reason="Branch 4 will reject tied scores — orchestrator does not yet validate",
-        strict=False,
-    )
     def test_judge_tie_is_rejected(
         self, pro: ScriptedAgent, con: ScriptedAgent
     ) -> None:
-        """A judge verdict with equal pro and con scores must be rejected."""
+        """A judge verdict with equal pro and con scores must raise ValueError."""
         tie_judge = ScriptedAgent("judge", [
             {"winner": "pro", "pro_score": 75, "con_score": 75, "justification": "draw"}
         ] * 5)
@@ -188,13 +184,9 @@ class TestOrchestratorArchitecture:
             judge_agent=tie_judge, pro_agent=pro, con_agent=con,
             topic="Test", max_rounds=1,
         )
-        result = orc.run()
-        assert result["pro_score"] != result["con_score"]
+        with pytest.raises(ValueError, match="tie"):
+            orc.run()
 
-    @pytest.mark.xfail(
-        reason="Branch 4 will validate agent output — invalid JSON not yet rejected",
-        strict=False,
-    )
     def test_invalid_agent_output_raises(
         self, judge: ScriptedAgent, con: ScriptedAgent
     ) -> None:
@@ -207,10 +199,6 @@ class TestOrchestratorArchitecture:
         with pytest.raises((ValueError, KeyError)):
             orc.run()
 
-    @pytest.mark.xfail(
-        reason="Branch 5 will enforce judge routing — winner validation not yet structural",
-        strict=False,
-    )
     def test_winner_must_be_pro_or_con(
         self, pro: ScriptedAgent, con: ScriptedAgent
     ) -> None:
@@ -222,5 +210,5 @@ class TestOrchestratorArchitecture:
             judge_agent=bad_judge, pro_agent=pro, con_agent=con,
             topic="Test", max_rounds=1,
         )
-        result = orc.run()
-        assert result["winner"] in ("pro", "con")
+        with pytest.raises(ValueError, match="pro.*con|con.*pro"):
+            orc.run()

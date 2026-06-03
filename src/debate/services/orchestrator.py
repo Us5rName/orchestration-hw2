@@ -8,6 +8,7 @@ Setup: creates DebateState, coordinates agents through rounds
 from ..agents.base_agent import AgentBase
 from ..shared.protocols import LoggerProtocol
 from ..shared.watchdog import Watchdog
+from .contracts import validate_agent_dict
 from .cost_calculator import summarize_debate, summarize_round
 from .debate_state import DebateState
 from .orchestrator_logging import (
@@ -152,9 +153,13 @@ class DebateOrchestrator:
 
         Returns:
             Pro agent's response dict.
+
+        Raises:
+            ValueError: if pro agent output fails validation.
         """
         pro_prompt = build_pro_prompt(self.state)
         pro_response = self.pro.think(pro_prompt)
+        validate_agent_dict(pro_response)
         self.state.record_argument(
             agent="pro",
             content=pro_response.get("content", ""),
@@ -170,9 +175,13 @@ class DebateOrchestrator:
 
         Returns:
             Con agent's response dict.
+
+        Raises:
+            ValueError: if con agent output fails validation.
         """
         con_prompt = build_con_prompt(self.state, pro_response)
         con_response = self.con.think(con_prompt)
+        validate_agent_dict(con_response)
         self.state.record_argument(
             agent="con",
             content=con_response.get("content", ""),

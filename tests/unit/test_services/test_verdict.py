@@ -12,7 +12,10 @@ class TestDecideWinner:
     def test_calls_judge_think(self) -> None:
         """decide_winner calls judge.think with verdict prompt."""
         judge = MagicMock()
-        judge.think.return_value = {"winner": "pro", "pro_score": 80, "con_score": 70}
+        judge.think.return_value = {
+            "winner": "pro", "pro_score": 80, "con_score": 70,
+            "justification": "Pro was more persuasive.",
+        }
         state = DebateState(topic="Test", max_rounds=3)
         result = decide_winner(judge, state)
         judge.think.assert_called_once()

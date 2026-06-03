@@ -6,6 +6,7 @@ Setup: no configuration needed
 """
 
 from ..agents.base_agent import AgentBase
+from .contracts import validate_judge_dict
 from .debate_state import DebateState
 from .prompt_builder import build_verdict_prompt
 
@@ -19,9 +20,14 @@ def decide_winner(judge: AgentBase, state: DebateState) -> dict:
 
     Returns:
         Dict with winner, scores, and justification.
+
+    Raises:
+        ValueError: if the judge's verdict is structurally invalid.
     """
     verdict_prompt = build_verdict_prompt(state)
-    return judge.think(verdict_prompt)
+    verdict = judge.think(verdict_prompt)
+    validate_judge_dict(verdict)
+    return verdict
 
 
 def record_verdict(state: DebateState, verdict: dict) -> None:
