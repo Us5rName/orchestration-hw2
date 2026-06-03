@@ -7,11 +7,11 @@
 | Check | Result |
 |-------|--------|
 | `uv run ruff check .` | Passing — zero violations |
-| `uv run pytest -q` | 302 passed · 0 xfailed · final validation pending |
-| Coverage (`--cov=src`) | 97.31% · final validation pending |
+| `uv run pytest -q` | 311 passed · 0 xfailed · final validation pending |
+| Coverage (`--cov=src`) | 97.54% · final validation pending |
 | Structured output contracts | **Enforced** — `AgentResponse` + `JudgeDecision` validated · issue #26 ✓ |
-| Parent-controlled policy | Verification planned — issue #27 |
-| Runtime safety controls | Verification planned — issue #28 |
+| Parent-controlled policy | **Verified** — structural constraints tested · issue #27 ✓ |
+| Runtime safety controls | **Wired and tested** — gatekeeper + watchdog in execution path · issue #28 ready for closure after PR merge |
 | `config/setup_example.json` | Completed — issue #25 ✓ |
 | Python 150-line rule | Maintainability pass in progress — issue #29 |
 
@@ -128,8 +128,8 @@
 | #24 | release: pass final code quality gate | `fix/ruff-and-config-example` | open |
 | #25 | release: complete configuration consistency check | `fix/ruff-and-config-example` | open |
 | #26 | release: enforce structured output contracts | `refactor/structured-output-contracts` | **completed** ✓ |
-| #27 | release: verify parent-controlled debate policy | `refactor/parent-controlled-policy` | open |
-| #28 | release: verify runtime safety controls | `refactor/runtime-safety-controls` | open |
+| #27 | release: verify parent-controlled debate policy | `refactor/parent-controlled-policy` | **completed** ✓ |
+| #28 | release: verify runtime safety controls | `refactor/runtime-safety-controls` | implemented — ready for closure after PR merge |
 | #29 | release: satisfy 150-line maintainability rule | `refactor/line-limit-split` | open |
 | #30 | release: complete final submission validation | `chore/final-submission-validation` | open |
 
@@ -145,10 +145,10 @@
 - [ ] Coverage remains above 85%
 - [ ] `config/setup_example.json` includes pricing and passes validation
 - [x] Structured output contracts are enforced (winner, scores, JSON schema)
-- [ ] Parent-controlled policy is verified by passing tests
-- [ ] Runtime safety controls are verified or scoped accurately in documentation
+- [x] Parent-controlled policy is verified by passing tests
+- [x] Runtime safety controls are wired into execution path and tested (issue #28 — ready for closure after PR merge)
 - [ ] All Python files satisfy the 150-line maintainability rule
-  - Note: `orchestrator.py` and `test_orchestrator.py` remain scheduled for `refactor/line-limit-split` (#29). The `refactor/structured-output-contracts` branch intentionally did not perform the line-limit refactor to keep the structured-output PR focused.
+  - Note: `orchestrator.py`, `sdk.py`, and `test_orchestrator.py` remain scheduled for `refactor/line-limit-split` (#29). The `refactor/runtime-safety-controls` branch intentionally did not perform the line-limit split to keep runtime-safety verification focused.
 - [ ] README metrics match final command outputs
 - [ ] `docs/prompt_log/PROMPT_LOG.md` is updated
 - [ ] No secrets or generated artifacts are tracked in git
