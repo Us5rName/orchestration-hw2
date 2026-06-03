@@ -4,10 +4,10 @@ Skills injected via config; defaults to persuasion-scoring which evaluates
 persuasiveness and communication quality, not factual correctness.
 """
 
-from .base_agent import AgentBase
 from ..providers.base_provider import LLMProvider
 from ..shared.protocols import LoggerProtocol
 from ..skills.base_skill import AgentSkill
+from .base_agent import AgentBase
 
 
 class JudgeAgent(AgentBase):

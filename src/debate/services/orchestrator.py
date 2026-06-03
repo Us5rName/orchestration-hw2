@@ -5,7 +5,10 @@ Output: run() -> final verdict with winner and scores
 Setup: creates DebateState, coordinates agents through rounds
 """
 
-from .contracts import validate_agent_dict
+from ..agents.base_agent import AgentBase
+from ..shared.gatekeeper import ApiGatekeeper
+from ..shared.protocols import LoggerProtocol
+from ..shared.watchdog import Watchdog
 from .cost_calculator import summarize_debate, summarize_round
 from .debate_state import DebateState
 from .orchestrator_logging import (
@@ -17,13 +20,9 @@ from .orchestrator_logging import (
     log_round_start,
     log_verdict,
 )
-from .prompt_builder import build_con_prompt, build_pro_prompt
-from .usage_record import UsageRecord, build_from_delta
+from .orchestrator_turns import build_usage_record, run_con_turn, run_pro_turn
+from .usage_record import UsageRecord
 from .verdict import decide_winner, format_result, record_verdict
-from ..agents.base_agent import AgentBase
-from ..shared.gatekeeper import ApiGatekeeper
-from ..shared.protocols import LoggerProtocol
-from ..shared.watchdog import Watchdog
 
 
 class DebateOrchestrator:
@@ -135,70 +134,14 @@ class DebateOrchestrator:
     def _build_usage_record(
         self, role: str, snapshot_before: dict, round_number: int | None = None
     ) -> UsageRecord:
-        """Build a UsageRecord from provider delta since a pre-call snapshot.
-
-        Args:
-            role: Agent role string ('judge', 'pro', 'con').
-            snapshot_before: get_usage() snapshot taken before the agent call.
-            round_number: Override round; defaults to current state round.
-
-        Returns:
-            UsageRecord with delta tokens; available=False when delta is zero.
-        """
-        agent = {"judge": self.judge, "pro": self.pro, "con": self.con}[role]
-        rn = round_number if round_number is not None else self.state.current_round
-        return build_from_delta(
-            str(agent.provider.provider_name),
-            str(agent.provider.model),
-            role,
-            snapshot_before,
-            agent.provider.get_usage(),
-            rn,
-        )
+        """Delegate to build_usage_record with the current agents map."""
+        agents_map = {"judge": self.judge, "pro": self.pro, "con": self.con}
+        return build_usage_record(agents_map, self.state, role, snapshot_before, round_number)
 
     def _run_pro_turn(self) -> dict:
-        """Execute pro agent's turn and record the argument.
-
-        Returns:
-            Pro agent's response dict.
-
-        Raises:
-            ValueError: if pro agent output fails validation.
-        """
-        pro_prompt = build_pro_prompt(self.state)
-        if self.gatekeeper:
-            pro_response = self.gatekeeper.execute(self.pro.think, pro_prompt)
-        else:
-            pro_response = self.pro.think(pro_prompt)
-        validate_agent_dict(pro_response)
-        self.state.record_argument(
-            agent="pro",
-            content=pro_response.get("content", ""),
-            references=pro_response.get("references", []),
-        )
-        return pro_response
+        """Delegate to run_pro_turn with current orchestrator state."""
+        return run_pro_turn(self.state, self.pro, self.gatekeeper)
 
     def _run_con_turn(self, pro_response: dict) -> dict:
-        """Execute con agent's turn and record the counter-argument.
-
-        Args:
-            pro_response: Pro agent's response dict.
-
-        Returns:
-            Con agent's response dict.
-
-        Raises:
-            ValueError: if con agent output fails validation.
-        """
-        con_prompt = build_con_prompt(self.state, pro_response)
-        if self.gatekeeper:
-            con_response = self.gatekeeper.execute(self.con.think, con_prompt)
-        else:
-            con_response = self.con.think(con_prompt)
-        validate_agent_dict(con_response)
-        self.state.record_argument(
-            agent="con",
-            content=con_response.get("content", ""),
-            references=con_response.get("references", []),
-        )
-        return con_response
+        """Delegate to run_con_turn with current orchestrator state."""
+        return run_con_turn(self.state, self.con, pro_response, self.gatekeeper)

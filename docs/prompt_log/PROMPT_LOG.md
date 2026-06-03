@@ -648,6 +648,45 @@ This branch completes the implementation work for #28; the PR closes it on merge
 
 ---
 
+### Branch: refactor/line-limit-split — Issue #29 (2026-06-03)
+**User**: Satisfy the 150-line maintainability rule across all Python files in src/ and tests/.
+
+**Branch**: `refactor/line-limit-split` · Issue #29
+
+**Violations found (baseline)**:
+- `src/debate/services/orchestrator.py` — 204 raw / 173 code
+- `src/debate/sdk/sdk.py` — 157 raw / 135 code
+- `tests/unit/test_providers/test_anthropic_provider.py` — 176 raw
+- `tests/unit/test_providers/test_gemini_provider.py` — 173 raw
+- `tests/unit/test_providers/test_openai_provider.py` — 174 raw
+- `tests/unit/test_services/test_contracts.py` — 205 raw
+- `tests/unit/test_services/test_orchestrator.py` — 214 raw / 155 code
+- `tests/unit/test_shared/test_config_validator.py` — 175 raw
+
+**Files split / modules extracted**:
+- `src/debate/services/orchestrator_turns.py` (new) — `run_pro_turn()`, `run_con_turn()`, `build_usage_record()` extracted from `DebateOrchestrator`
+- `src/debate/sdk/wiring.py` (new) — `build_provider_dict()`, `build_agent_dict()`, `build_pricing_dict()` extracted from `DebateSDK`
+- `orchestrator.py` — three methods become one-line delegates; down to ~144 raw lines
+- `sdk.py` — `_create_agent` and `_create_orchestrator` use wiring helpers; down to ~126 raw lines
+- `test_anthropic_provider_usage.py`, `test_gemini_provider_usage.py`, `test_openai_provider_usage.py` (new) — UsageTracking classes moved out of each provider test file
+- `test_orchestrator_flow.py` (new) — Init + RunRound + Run tests
+- `test_orchestrator_safety.py` (new) — Architecture / parent-controlled-policy tests
+- `test_orchestrator.py` — removed (replaced by flow + safety files)
+- `test_contracts_judge.py` (new) — JudgeDecision + judge_decision_from_dict tests moved here
+- `test_contracts.py` — trimmed to AgentResponse tests only
+- `test_config_validator_extra.py` (new) — ValidatePricing + ValidateAgentSkills + SetupExampleConsistency moved here
+- `test_config_validator.py` — trimmed to ValidateConfigVersion + ValidateAllConfigs
+
+**Final validation**:
+- `uv run ruff check .` → All checks passed!
+- `uv run pytest -q` → 321 passed · 0 xfailed · 1 warning
+- Coverage → 97.67% (above 85% threshold)
+- Line-count script → All Python files are under the 150-line rule.
+
+This branch completes the implementation work for #29; the PR closes it on merge.
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
