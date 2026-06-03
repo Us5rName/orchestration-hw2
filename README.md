@@ -17,13 +17,13 @@ User → TerminalMenu → DebateSDK → DebateOrchestrator
                          │              │
                     SearchService  SearchService
                          │
-                    ApiGatekeeper → LLMProvider (OpenAI / Anthropic / Gemini)
+                    ApiGatekeeper   LLMProvider (OpenAI / Anthropic / Gemini)
 ```
 
 - **Pro** argues one side using live web search for citations.
 - **Con** argues the other side, cross-checking evidence and challenging methodology.
 - **Judge** scores persuasiveness (no ties), then declares a winner.
-- All external API calls flow through the **ApiGatekeeper** (rate limiting, retries, queue).
+- **ApiGatekeeper** provides rate limiting, retries, and call queuing — runtime safety control verification is part of the Final Submission Readiness Roadmap.
 
 ## Quick Start
 
@@ -270,13 +270,16 @@ Estimated totals: **~22,800 input / ~9,100 output tokens**.
 ## Tests & Quality
 
 ```
-261 passed  ·  98.5% coverage  ·  0 Ruff violations
+Baseline: 264 passed, 3 xfailed (pending readiness gates) · 97.4% coverage · final validation pending
 ```
+
+Structured output contract enforcement, parent-controlled policy verification, and runtime safety
+control verification are part of the Final Submission Readiness Roadmap — see `docs/TODO.md`.
 
 Run tests:
 
 ```bash
-uv run pytest --cov=debate
+uv run pytest --cov=src
 ```
 
 Run linter:
