@@ -581,6 +581,34 @@ development branches, and align all documentation with the Final Submission Read
 
 ---
 
+### Branch: refactor/structured-output-contracts — Issue #26 (2026-06-03)
+**User**: Enforce structured output contracts for agent and judge outputs.
+
+**Branch**: `refactor/structured-output-contracts` · Issue #26
+
+**Contracts added**:
+- `src/debate/services/contracts.py` — `AgentResponse` and `JudgeDecision` dataclasses with `__post_init__` validation; `agent_response_from_dict()` and `judge_decision_from_dict()` factory functions; `validate_agent_dict()` and `validate_judge_dict()` helpers
+- Validation rules: content non-empty + no control chars; winner must be "pro"/"con"; scores must differ; reasoning non-empty
+- `verdict.decide_winner()` calls `validate_judge_dict()` before returning
+- `orchestrator._run_pro_turn()` and `_run_con_turn()` call `validate_agent_dict()` before recording arguments
+
+**Tests updated**:
+- `tests/unit/test_services/test_contracts.py` — 30 new tests covering all validation paths
+- `tests/unit/test_services/test_verdict.py` — `test_calls_judge_think` updated to include `justification` field
+- `tests/unit/test_services/test_orchestrator.py` — 3 xfail tests converted to passing tests:
+  - `test_judge_tie_is_rejected` — now `pytest.raises(ValueError, match="tie")`
+  - `test_invalid_agent_output_raises` — xfail removed (already used `pytest.raises`)
+  - `test_winner_must_be_pro_or_con` — now `pytest.raises(ValueError, match="pro.*con|con.*pro")`
+
+**xfail count**: 3 xfailed → 0 xfailed
+
+**Final validation**:
+- `uv run ruff check .` → All checks passed!
+- `uv run pytest -q` → 302 passed · 0 xfailed · 1 warning
+- Coverage → 97.51% (above 85% threshold)
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
