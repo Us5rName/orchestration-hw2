@@ -397,12 +397,15 @@ explicit structural verification: Pro and Con agents hold no direct references t
 message flow is mediated by the orchestrator; turn order and winner constraints are tested
 directly. This makes the ADR-003 invariant testable, not just conventional.
 
-### Runtime Safety Control Verification (Issue #28)
+### Runtime Safety Control Verification (Issue #28) ✓
 
-`ApiGatekeeper` provides rate limiting, retry logic, and call queuing. `Watchdog` provides
-keep-alive monitoring. This gate verifies each control's behavior at the appropriate execution
-point, or documents its precise scope in the architecture if the full wiring is deferred to a
-future release. README and PLAN documentation will accurately reflect the verified state.
+`ApiGatekeeper` is wired into `DebateOrchestrator`: every `agent.think()` call (pro, con, and
+judge verdict) is routed through `gatekeeper.execute()`, enabling rate limiting, retry logic, and
+call queuing in the hot path. `Watchdog.ping()` is called once per debate round in
+`DebateOrchestrator.run()`, keeping the watchdog alive throughout execution. Both controls are
+passed from `DebateSDK` to `DebateOrchestrator` at construction time. Tests in
+`test_runtime_safety.py` verify exact invocation counts and end-to-end debate success with real
+and mocked controls.
 
 ### Configuration Consistency Check (Issue #25)
 

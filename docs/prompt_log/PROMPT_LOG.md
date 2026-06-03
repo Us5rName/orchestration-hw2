@@ -609,6 +609,45 @@ development branches, and align all documentation with the Final Submission Read
 
 ---
 
+### Branch: refactor/runtime-safety-controls — Issue #28 (2026-06-03)
+**User**: Verify and wire runtime safety controls into the real execution path.
+
+**Branch**: `refactor/runtime-safety-controls` · Issue #28
+
+**ApiGatekeeper — wired**:
+- `DebateOrchestrator.__init__` gains `gatekeeper: ApiGatekeeper | None = None` parameter
+- `_run_pro_turn()` — wraps `pro.think()` through `gatekeeper.execute()`
+- `_run_con_turn()` — wraps `con.think()` through `gatekeeper.execute()`
+- `run()` — wraps `decide_winner(judge, state)` through `gatekeeper.execute()`
+- `DebateSDK._create_orchestrator()` passes `gatekeeper=self.gatekeeper`
+- Result: every agent think() call is rate-limited, queued, and retried via ApiGatekeeper
+
+**Watchdog — wired**:
+- `DebateOrchestrator.run()` calls `watchdog.ping()` once before each debate round
+- Keeps watchdog alive throughout debate execution; timeout fires only on actual hang
+
+**Tests added**:
+- `tests/unit/test_services/test_runtime_safety.py` (7 new tests)
+  - `TestGatekeeperRuntime`: verifies execute() called 3× per 1-round debate, 7× per 3-round debate, full debate succeeds with real gatekeeper, gatekeeper optional
+  - `TestWatchdogRuntime`: verifies ping() called once per round, debate completes with healthy watchdog, watchdog optional
+
+**Documentation updated**:
+- `docs/PLAN.md` — Runtime Safety Control Verification section now accurately describes wired behavior
+- `docs/TODO.md` — issue #28 implementation noted as ready for closure after PR merge; checklist item checked; metrics updated; line-limit note updated to include `orchestrator.py` and `sdk.py` as scheduled for `refactor/line-limit-split` (#29)
+
+**xfail count**: 0 xfailed (unchanged)
+
+**Line-count note**: `orchestrator.py` and `sdk.py` remain over 150 lines and are scheduled for `refactor/line-limit-split` (#29). This branch intentionally does not perform the line-limit split to keep runtime-safety verification focused.
+
+**Final validation**:
+- `uv run ruff check .` → All checks passed!
+- `uv run pytest -q` → 311 passed · 0 xfailed · 1 warning
+- Coverage → 97.54% (above 85% threshold)
+
+This branch completes the implementation work for #28; the PR closes it on merge.
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement

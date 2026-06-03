@@ -6,6 +6,7 @@ Setup: creates DebateState, coordinates agents through rounds
 """
 
 from ..agents.base_agent import AgentBase
+from ..shared.gatekeeper import ApiGatekeeper
 from ..shared.protocols import LoggerProtocol
 from ..shared.watchdog import Watchdog
 from .contracts import validate_agent_dict
@@ -42,6 +43,7 @@ class DebateOrchestrator:
         watchdog: Watchdog | None = None,
         logger: LoggerProtocol | None = None,
         pricing: dict | None = None,
+        gatekeeper: ApiGatekeeper | None = None,
     ) -> None:
         """Initialize orchestrator with agents and debate config.
 
@@ -55,6 +57,7 @@ class DebateOrchestrator:
         self.pro = pro_agent
         self.con = con_agent
         self.watchdog = watchdog
+        self.gatekeeper = gatekeeper
         self.logger = logger
         self.state = DebateState(topic=topic, max_rounds=max_rounds)
         self._pricing: dict = pricing or {}
@@ -107,10 +110,15 @@ class DebateOrchestrator:
         log_debate_start(self.logger, self.state.topic, self.state.max_rounds)
 
         for _ in range(self.state.max_rounds):
+            if self.watchdog:
+                self.watchdog.ping()
             self.run_round()
 
         judge_snap = self.judge.provider.get_usage()
-        verdict = decide_winner(self.judge, self.state)
+        if self.gatekeeper:
+            verdict = self.gatekeeper.execute(decide_winner, self.judge, self.state)
+        else:
+            verdict = decide_winner(self.judge, self.state)
         judge_rec = self._build_usage_record("judge", judge_snap, round_number=0)
         self._usage_records.append(judge_rec)
 
@@ -158,7 +166,10 @@ class DebateOrchestrator:
             ValueError: if pro agent output fails validation.
         """
         pro_prompt = build_pro_prompt(self.state)
-        pro_response = self.pro.think(pro_prompt)
+        if self.gatekeeper:
+            pro_response = self.gatekeeper.execute(self.pro.think, pro_prompt)
+        else:
+            pro_response = self.pro.think(pro_prompt)
         validate_agent_dict(pro_response)
         self.state.record_argument(
             agent="pro",
@@ -180,7 +191,10 @@ class DebateOrchestrator:
             ValueError: if con agent output fails validation.
         """
         con_prompt = build_con_prompt(self.state, pro_response)
-        con_response = self.con.think(con_prompt)
+        if self.gatekeeper:
+            con_response = self.gatekeeper.execute(self.con.think, con_prompt)
+        else:
+            con_response = self.con.think(con_prompt)
         validate_agent_dict(con_response)
         self.state.record_argument(
             agent="con",

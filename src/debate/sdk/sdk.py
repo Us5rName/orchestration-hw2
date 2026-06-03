@@ -105,6 +105,7 @@ class DebateSDK:
             watchdog=self.watchdog,
             logger=self.logger,
             pricing=pricing_dict,
+            gatekeeper=self.gatekeeper,
         )
         return self._orchestrator
 
