@@ -123,8 +123,8 @@
 
 | Issue | Title | Branch | Status |
 |-------|-------|--------|--------|
-| #18 | docs: add developer onboarding guide | `docs/developer-guide-and-example` | open |
-| #20 | docs: add real 5-round debate example | `docs/developer-guide-and-example` | open |
+| #18 | docs: add developer onboarding guide | `docs/developer-guide-and-example` | implemented — ready for closure after PR merge |
+| #20 | docs: add real 5-round debate example | `docs/developer-guide-and-example` | implemented — ready for closure after PR merge |
 | #24 | release: pass final code quality gate | `fix/ruff-and-config-example` | open |
 | #25 | release: complete configuration consistency check | `fix/ruff-and-config-example` | open |
 | #26 | release: enforce structured output contracts | `refactor/structured-output-contracts` | **completed** ✓ |
