@@ -7,13 +7,13 @@
 | Check | Result |
 |-------|--------|
 | `uv run ruff check .` | Passing — zero violations |
-| `uv run pytest -q` | 311 passed · 0 xfailed · final validation pending |
-| Coverage (`--cov=src`) | 97.54% · final validation pending |
+| `uv run pytest -q` | 321 passed · 0 xfailed · final validation pending |
+| Coverage (`--cov=src`) | 97.67% · final validation pending |
 | Structured output contracts | **Enforced** — `AgentResponse` + `JudgeDecision` validated · issue #26 ✓ |
 | Parent-controlled policy | **Verified** — structural constraints tested · issue #27 ✓ |
-| Runtime safety controls | **Wired and tested** — gatekeeper + watchdog in execution path · issue #28 ready for closure after PR merge |
+| Runtime safety controls | **Wired and tested** — gatekeeper + watchdog in execution path · issue #28 ✓ |
 | `config/setup_example.json` | Completed — issue #25 ✓ |
-| Python 150-line rule | Maintainability pass in progress — issue #29 |
+| Python 150-line rule | **Satisfied** — all Python files under 150 lines · issue #29 implemented in `refactor/line-limit-split` |
 
 ---
 
@@ -130,7 +130,7 @@
 | #26 | release: enforce structured output contracts | `refactor/structured-output-contracts` | **completed** ✓ |
 | #27 | release: verify parent-controlled debate policy | `refactor/parent-controlled-policy` | **completed** ✓ |
 | #28 | release: verify runtime safety controls | `refactor/runtime-safety-controls` | implemented — ready for closure after PR merge |
-| #29 | release: satisfy 150-line maintainability rule | `refactor/line-limit-split` | open |
+| #29 | release: satisfy 150-line maintainability rule | `refactor/line-limit-split` | implemented — ready for closure after PR merge |
 | #30 | release: complete final submission validation | `chore/final-submission-validation` | open |
 
 ---
@@ -147,8 +147,7 @@
 - [x] Structured output contracts are enforced (winner, scores, JSON schema)
 - [x] Parent-controlled policy is verified by passing tests
 - [x] Runtime safety controls are wired into execution path and tested (issue #28 — ready for closure after PR merge)
-- [ ] All Python files satisfy the 150-line maintainability rule
-  - Note: `orchestrator.py`, `sdk.py`, and `test_orchestrator.py` remain scheduled for `refactor/line-limit-split` (#29). The `refactor/runtime-safety-controls` branch intentionally did not perform the line-limit split to keep runtime-safety verification focused.
+- [x] All Python files satisfy the 150-line maintainability rule — `refactor/line-limit-split` (#29) ✓
 - [ ] README metrics match final command outputs
 - [ ] `docs/prompt_log/PROMPT_LOG.md` is updated
 - [ ] No secrets or generated artifacts are tracked in git

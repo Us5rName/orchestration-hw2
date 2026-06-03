@@ -18,6 +18,7 @@ from ..shared.watchdog import Watchdog
 from ..skills.registry import SkillRegistry, default_registry
 from .agent_factory import create_agent
 from .provider_factory import create_provider
+from .wiring import build_agent_dict, build_pricing_dict, build_provider_dict
 
 
 class DebateSDK:
@@ -54,48 +55,18 @@ class DebateSDK:
         self.watchdog = Watchdog(check_interval=1.0, timeout=30.0)
 
     def _create_agent(self, role: str) -> JudgeAgent | ProAgent | ConAgent:
-        """Create an agent with resolved skills from config.
-
-        Args:
-            role: Agent role ('judge', 'pro', 'con').
-
-        Returns:
-            Configured agent instance with skills attached.
-        """
+        """Create an agent with resolved skills from config."""
         agent_cfg = self.config.agent_config(role)
         debate_cfg = self.config.debate_config
-        provider_dict = {
-            "provider": agent_cfg.provider,
-            "model": agent_cfg.model,
-            "temperature": agent_cfg.temperature,
-            "base_url": agent_cfg.base_url,
-            "timeout": agent_cfg.timeout,
-        }
-        provider = create_provider(agent_cfg.provider, provider_dict)
-        agent_dict = {
-            "model": agent_cfg.model,
-            "temperature": agent_cfg.temperature,
-            "skills": agent_cfg.skills,
-        }
+        provider = create_provider(agent_cfg.provider, build_provider_dict(agent_cfg))
         return create_agent(
-            role, agent_dict, provider, debate_cfg.topic,
+            role, build_agent_dict(agent_cfg), provider, debate_cfg.topic,
             agent_cfg.timeout, self._skill_registry, self.logger,
         )
 
     def _create_orchestrator(self) -> DebateOrchestrator:
-        """Create orchestrator with all agents.
-
-        Returns:
-            Configured DebateOrchestrator instance.
-        """
+        """Create orchestrator with all agents."""
         debate_cfg = self.config.debate_config
-        pricing_cfg = self.config.pricing_config
-        pricing_dict = {
-            "unit": pricing_cfg.unit,
-            "judge": {"input": pricing_cfg.judge.input, "output": pricing_cfg.judge.output},
-            "pro": {"input": pricing_cfg.pro.input, "output": pricing_cfg.pro.output},
-            "con": {"input": pricing_cfg.con.input, "output": pricing_cfg.con.output},
-        }
         self._orchestrator = DebateOrchestrator(
             judge_agent=self._create_agent("judge"),
             pro_agent=self._create_agent("pro"),
@@ -104,7 +75,7 @@ class DebateSDK:
             max_rounds=debate_cfg.max_rounds,
             watchdog=self.watchdog,
             logger=self.logger,
-            pricing=pricing_dict,
+            pricing=build_pricing_dict(self.config.pricing_config),
             gatekeeper=self.gatekeeper,
         )
         return self._orchestrator
