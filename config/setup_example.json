@@ -2,7 +2,7 @@
   "version": "1.00",
   "debate": {
     "topic": "Real Madrid vs Barcelona - which is better?",
-    "max_rounds": 10,
+    "max_rounds": 5,
     "max_tokens_per_agent": 500,
     "request_timeout_seconds": 60
   },
@@ -39,5 +39,11 @@
     "max_files": 20,
     "max_lines_per_file": 500,
     "log_directory": "logs"
+  },
+  "pricing": {
+    "unit": "per_1m_tokens",
+    "judge": {"input": 0.15, "output": 0.60},
+    "pro":   {"input": 0.15, "output": 0.60},
+    "con":   {"input": 0.15, "output": 0.60}
   }
 }
