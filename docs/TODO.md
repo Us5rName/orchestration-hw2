@@ -2,18 +2,23 @@
 
 ## Current Verified Status
 
-> Last verified: 2026-06-03 · Final validation is pending completion of all readiness branches.
+> Last verified: 2026-06-03 · Final validation complete — branch `chore/final-submission-validation`
 
 | Check | Result |
 |-------|--------|
-| `uv run ruff check .` | Passing — zero violations |
-| `uv run pytest -q` | 321 passed · 0 xfailed · final validation pending |
-| Coverage (`--cov=src`) | 97.67% · final validation pending |
+| `uv run ruff check .` | **All checks passed!** — zero violations |
+| `uv run pytest -q` | **321 passed · 0 xfailed · 1 warning** |
+| Coverage (`--cov=src`) | **97.67%** — above 85% threshold |
+| Line-count validation | **All Python files under 150-line rule** |
+| CLI smoke test | **Passes** — `printf '4\n' | uv run debate` exits cleanly |
+| Secrets / artifacts audit | **Clean** — no tracked secrets or generated artifacts |
 | Structured output contracts | **Enforced** — `AgentResponse` + `JudgeDecision` validated · issue #26 ✓ |
 | Parent-controlled policy | **Verified** — structural constraints tested · issue #27 ✓ |
 | Runtime safety controls | **Wired and tested** — gatekeeper + watchdog in execution path · issue #28 ✓ |
-| `config/setup_example.json` | Completed — issue #25 ✓ |
-| Python 150-line rule | **Satisfied** — all Python files under 150 lines · issue #29 implemented in `refactor/line-limit-split` |
+| `config/setup_example.json` | **Complete** — pricing section present and validates · issue #25 ✓ |
+| Python 150-line rule | **Satisfied** — all files split · issue #29 ✓ |
+| Developer guide | **Added** — `docs/DEVELOPER_GUIDE.md` · issue #18 ✓ |
+| 5-round example | **Added** — `docs/example_debate.md` · issue #20 ✓ |
 
 ---
 
@@ -131,7 +136,7 @@
 | #27 | release: verify parent-controlled debate policy | `refactor/parent-controlled-policy` | **completed** ✓ |
 | #28 | release: verify runtime safety controls | `refactor/runtime-safety-controls` | implemented — ready for closure after PR merge |
 | #29 | release: satisfy 150-line maintainability rule | `refactor/line-limit-split` | implemented — ready for closure after PR merge |
-| #30 | release: complete final submission validation | `chore/final-submission-validation` | open |
+| #30 | release: complete final submission validation | `chore/final-submission-validation` | implemented — ready for closure after PR merge |
 
 ---
 
@@ -139,18 +144,21 @@
 
 > Complete all items before submitting. Do not check a box unless a command confirms it.
 
-- [ ] `uv run ruff check .` passes with zero violations
-- [ ] `uv run pytest -q` passes
-- [x] Zero xfailed tests remain
-- [ ] Coverage remains above 85%
-- [ ] `config/setup_example.json` includes pricing and passes validation
-- [x] Structured output contracts are enforced (winner, scores, JSON schema)
-- [x] Parent-controlled policy is verified by passing tests
-- [x] Runtime safety controls are wired into execution path and tested (issue #28 — ready for closure after PR merge)
-- [x] All Python files satisfy the 150-line maintainability rule — `refactor/line-limit-split` (#29) ✓
-- [ ] README metrics match final command outputs
-- [ ] `docs/prompt_log/PROMPT_LOG.md` is updated
-- [ ] No secrets or generated artifacts are tracked in git
+- [x] `uv run ruff check .` passes with zero violations ✓
+- [x] `uv run pytest -q` passes — 321 passed · 0 xfailed ✓
+- [x] Zero xfailed tests remain ✓
+- [x] Coverage remains above 85% — 97.67% ✓
+- [x] `config/setup_example.json` includes pricing and passes validation ✓
+- [x] Structured output contracts are enforced (winner, scores, JSON schema) ✓
+- [x] Parent-controlled policy is verified by passing tests ✓
+- [x] Runtime safety controls are wired into execution path and tested ✓
+- [x] All Python files satisfy the 150-line maintainability rule ✓
+- [x] README metrics match final command outputs ✓
+- [x] `docs/prompt_log/PROMPT_LOG.md` is updated ✓
+- [x] No secrets or generated artifacts are tracked in git ✓
+- [x] Developer onboarding guide added — `docs/DEVELOPER_GUIDE.md` ✓
+- [x] 5-round debate example added — `docs/example_debate.md` ✓
+- [x] CLI smoke test passes — `printf '4\n' | uv run debate` ✓
 
 ---
 

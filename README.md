@@ -279,11 +279,20 @@ Estimated totals: **~22,800 input / ~9,100 output tokens**.
 ## Tests & Quality
 
 ```
-Baseline: 321 passed · 0 xfailed · 97.67% coverage · final validation pending
+uv run ruff check .                      → All checks passed!
+uv run pytest -q                         → 321 passed · 0 xfailed · 1 warning
+uv run pytest --cov=src -q               → 97.67% coverage
+Line-count validation                    → All Python files under 150-line rule
+CLI smoke test (printf '4\n' | uv run debate) → Passes without API call
 ```
 
-Structured output contract enforcement, parent-controlled policy verification, and runtime safety
-control verification are part of the Final Submission Readiness Roadmap — see `docs/TODO.md`.
+Architecture features verified:
+- Structured output contracts enforced (`AgentResponse` + `JudgeDecision` validation)
+- Parent-controlled debate policy — orchestrator mediates all agent communication
+- Runtime safety controls — `ApiGatekeeper` and `Watchdog` wired into execution path
+- Configurable providers and pricing per role
+- Skills plugin system
+- Per-round and full-debate cost tracking
 
 Run tests:
 

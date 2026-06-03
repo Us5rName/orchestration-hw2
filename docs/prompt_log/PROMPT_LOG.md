@@ -713,6 +713,34 @@ This branch completes the implementation work for #18 and #20; the PR closes the
 
 ---
 
+### Branch: chore/final-submission-validation — Issue #30 (2026-06-03)
+**User**: Perform final validation and update all docs for submission readiness.
+
+**Branch**: `chore/final-submission-validation` · Issue #30
+
+**Final validation results:**
+
+```
+uv sync --group dev                           → Resolved 54 packages (clean)
+uv run ruff check .                           → All checks passed!
+uv run pytest -q                              → 321 passed · 0 xfailed · 1 warning
+uv run pytest --cov=src --cov-report=term-missing -q → 97.67% coverage
+Line-count validation                         → All Python files are under the 150-line rule.
+CLI smoke test (printf '4\n' | uv run debate) → Exits cleanly with "Goodbye!"
+Secrets/artifacts audit                       → .env-example is the only key-related tracked file (intentional placeholder)
+```
+
+**Documentation updated:**
+- `README.md` — Tests & Quality section updated with final verified command outputs; architecture summary added
+- `docs/TODO.md` — Current Verified Status table complete; Final Submission Checklist fully checked; #30 marked ready for closure
+- `docs/prompt_log/PROMPT_LOG.md` — this entry
+
+**No production code changes.** This branch is documentation-only.
+
+This branch completes the implementation work for #30; the PR closes it on merge.
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
