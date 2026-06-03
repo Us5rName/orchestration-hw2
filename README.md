@@ -267,10 +267,19 @@ Estimated totals: **~22,800 input / ~9,100 output tokens**.
 3. **Gemini Flash** — 10–30× cheaper than GPT-4o at comparable quality for debate tasks.
 4. **Limit output** — lower `max_tokens_per_agent` to cap response size per turn.
 
+## Documentation
+
+| Document | Contents |
+|----------|----------|
+| [Developer Guide](docs/DEVELOPER_GUIDE.md) | Quick start, uv workflow, test/lint commands, adding providers/skills, 150-line rule, secrets policy |
+| [Example Debate](docs/example_debate.md) | Annotated 5-round mock debate transcript — Pro/Con/Judge turns, verdict, cost summary |
+| [TODO](docs/TODO.md) | Final Submission Readiness Roadmap, issue mapping, checklist |
+| [Prompt Log](docs/prompt_log/PROMPT_LOG.md) | AI-assisted development decisions log |
+
 ## Tests & Quality
 
 ```
-Baseline: 264 passed, 3 xfailed (pending readiness gates) · 97.4% coverage · final validation pending
+Baseline: 321 passed · 0 xfailed · 97.67% coverage · final validation pending
 ```
 
 Structured output contract enforcement, parent-controlled policy verification, and runtime safety

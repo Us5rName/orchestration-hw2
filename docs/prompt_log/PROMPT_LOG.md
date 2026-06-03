@@ -687,6 +687,32 @@ This branch completes the implementation work for #29; the PR closes it on merge
 
 ---
 
+### Branch: docs/developer-guide-and-example — Issues #18 and #20 (2026-06-03)
+**User**: Add developer onboarding guide and real 5-round debate example.
+
+**Branch**: `docs/developer-guide-and-example` · Issues #18 and #20
+
+**Files added**:
+- `docs/DEVELOPER_GUIDE.md` — full developer onboarding guide covering: repository purpose, quick start, uv workflow, CLI, tests, coverage, Ruff, configuration, secrets policy, adding a provider, adding a skill, 150-line rule, TODO/prompt-log update process, logs location, avoiding generated artifacts in git
+- `docs/example_debate.md` — deterministic 5-round mock debate transcript on topic "Artificial intelligence should be regulated by international law"; generated using real `DebateOrchestrator` with `MultiScriptedAgent` instances (no paid API called); includes 5 Pro turns, 5 Con turns, judge verdict (pro 74 / con 68), and mock cost summary
+- `README.md` — added Documentation section with links to DEVELOPER_GUIDE.md and example_debate.md; updated Tests & Quality baseline to 321 passed / 0 xfailed / 97.67%
+
+**Example generation method**:
+Used `DebateOrchestrator` with `MultiScriptedAgent` (scripted deterministic responses). Verified via:
+```
+uv run python3 -c "... orc.run()" → WINNER: pro, PRO: 74, CON: 68, ROUNDS: 5
+```
+
+**Final validation**:
+- `uv run ruff check .` → All checks passed!
+- `uv run pytest -q` → 321 passed · 0 xfailed · 1 warning
+- Coverage → 97.67% (above 85% threshold)
+- Line-count script → All Python files are under the 150-line rule.
+
+This branch completes the implementation work for #18 and #20; the PR closes them on merge.
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement
