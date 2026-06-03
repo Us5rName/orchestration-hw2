@@ -5,10 +5,10 @@ Output: formatted result with winner, scores, history
 Setup: no configuration needed
 """
 
-from ..agents.base_agent import AgentBase
 from .contracts import validate_judge_dict
 from .debate_state import DebateState
 from .prompt_builder import build_verdict_prompt
+from ..agents.base_agent import AgentBase
 
 
 def decide_winner(judge: AgentBase, state: DebateState) -> dict:
