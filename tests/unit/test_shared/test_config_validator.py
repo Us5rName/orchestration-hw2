@@ -155,3 +155,21 @@ class TestValidateAgentSkills:
         """ConfigValidationError is a RuntimeError."""
         exc = ConfigValidationError("bad config")
         assert isinstance(exc, RuntimeError)
+
+
+class TestSetupExampleConsistency:
+    """Verify setup_example.json satisfies the configuration schema."""
+
+    def test_setup_example_has_pricing_section(self) -> None:
+        """setup_example.json must include a pricing section."""
+        from debate.shared.paths import PROJECT_ROOT
+        example = PROJECT_ROOT / "config" / "setup_example.json"
+        data = json.loads(example.read_text(encoding="utf-8"))
+        assert "pricing" in data, "setup_example.json is missing the 'pricing' section"
+
+    def test_setup_example_pricing_passes_validation(self) -> None:
+        """Pricing section in setup_example.json must pass validate_pricing."""
+        from debate.shared.paths import PROJECT_ROOT
+        example = PROJECT_ROOT / "config" / "setup_example.json"
+        data = json.loads(example.read_text(encoding="utf-8"))
+        validate_pricing(data)  # must not raise

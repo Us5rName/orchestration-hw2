@@ -559,6 +559,28 @@ development branches, and align all documentation with the Final Submission Read
 
 ---
 
+### Prompt 2 (Release Quality Gate fix/ruff-and-config-example) — Ruff and Config Example Fix (2026-06-03)
+**User**: Fix all Ruff violations and add missing pricing section to setup_example.json.
+
+**Branch**: `fix/ruff-and-config-example`
+
+**Problem**: 6 Ruff I001 import-sort violations were present post-Branch-2 merge. `config/setup_example.json` was missing the `pricing` section that `validate_pricing()` requires, meaning any user copying the example would fail at startup.
+
+**Changes**:
+- `ruff check --fix .` — sorted imports in `con_agent.py`, `judge_agent.py`, `pro_agent.py`, `sdk.py`, `orchestrator.py`, `verdict.py`
+- `config/setup_example.json` — added `pricing` section (per_1m_tokens, gpt-4o-mini reference rates); `max_rounds` set to 5
+- `tests/unit/test_shared/test_config_validator.py` — added `TestSetupExampleConsistency` (2 tests) proving example satisfies the pricing validator
+- `docs/TODO.md` — added Release Quality Gate entry with verified results
+- Issues #24 (Ruff) and #25 (config example) ready for closure after PR merge
+
+**Result**: 266 passed · 3 xfailed · 97.38% coverage · 0 Ruff violations
+
+**Key Decisions**:
+- Tests were added for the example file rather than relying on manual verification — the validator is fast and the test catches future regressions
+- `max_rounds: 5` is the canonical user-facing default; `config/setup.json` keeps `max_rounds: 1` as a dev shortcut
+
+---
+
 ## Best Practices Established
 
 1. Plan before code — PRD → PLAN → TODO → approval → implement

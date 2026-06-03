@@ -81,6 +81,30 @@
 
 ---
 
+### Branch 2 — refactor/typed-config-sdk-boundary ✅
+- [x] Add `src/debate/shared/config_models.py` — `DebateConfig`, `AgentConfig`, `LoggingConfig` (with `to_dict()`), `PricingRoleConfig`, `PricingConfig` dataclasses with `from_dict()` classmethods
+- [x] Add `src/debate/shared/protocols.py` — `LoggerProtocol` (structural, `@runtime_checkable`), `DebateSDKProtocol`
+- [x] `ConfigManager` — typed property accessors: `.debate_config`, `.logging_config`, `.gatekeeper_config` (returns `RateLimitConfig`), `.pricing_config`, `.agent_config(role)`
+- [x] `DebateSDK` — uses typed config properties throughout; no raw `config.get("section", {})` calls
+- [x] `TerminalMenu` — `sdk: DebateSDKProtocol` (replaces `sdk: object`)
+- [x] All agents (`ProAgent`, `ConAgent`, `JudgeAgent`, `AgentBase`) — `provider: LLMProvider`, `logger: LoggerProtocol | None`
+- [x] `DebateOrchestrator` — `watchdog: Watchdog | None`, `logger: LoggerProtocol | None`
+- [x] `orchestrator_logging.py` — all 8 functions use `logger: LoggerProtocol | None`
+- [x] `agent_factory.py` — `logger: LoggerProtocol | None`
+- [x] Add `tests/fakes/logger.py` — `FakeLogger` implementing `LoggerProtocol` with `.messages` property
+- [x] `test_base_agent_logging.py` and `test_orchestrator_logging.py` — use `FakeLogger` instead of bare `MagicMock`
+- [x] SDK tests updated — `apply_typed_config()` helper in conftest wires new typed accessors on mocked `ConfigManager`
+- **Result**: 264 passed · 3 xfailed · 97.69% coverage · 0 Ruff violations
+- **Note**: 6 Ruff I001 import-sort violations introduced post-merge; resolved in fix/ruff-and-config-example
+
+### Release Quality Gate — fix/ruff-and-config-example ✅
+- [x] Fix 6 Ruff I001 import-sort violations (`con_agent.py`, `judge_agent.py`, `pro_agent.py`, `sdk.py`, `orchestrator.py`, `verdict.py`)
+- [x] Add `pricing` section to `config/setup_example.json`; set `max_rounds: 5`
+- [x] Add `TestSetupExampleConsistency` to `test_config_validator.py` — verifies example passes `validate_pricing()`
+- **Result**: 266 passed · 3 xfailed · 97.38% coverage · 0 Ruff violations (issues #24 and #25 ready for closure after PR merge)
+
+---
+
 ## Final Submission Readiness Roadmap
 
 | Order | Branch | Release-Readiness Goal | Issues |
